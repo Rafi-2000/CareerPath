@@ -21,6 +21,25 @@
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
 
+
+        /* ===== Upload Progress ===== */
+        #upload-toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: #1e293b; color: white; border-radius: 14px;
+            padding: 12px 20px; font-size: 13px; font-weight: 600;
+            display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.18); z-index: 9999;
+            min-width: 260px; transition: opacity 0.3s;
+        }
+        #upload-toast.hidden { opacity: 0; pointer-events: none; }
+        #upload-progress-bar-wrap {
+            flex: 1; height: 5px; background: #334155; border-radius: 99px; overflow: hidden;
+        }
+        #upload-progress-bar {
+            height: 100%; background: #6366f1; border-radius: 99px;
+            transition: width 0.2s; width: 0%;
+        }
+
         /* ===== Deadline Alert Slider ===== */
         #deadline-slider-wrap {
             max-width: 1220px;
@@ -467,6 +486,70 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
+        // ════════════════════════════════════════════════════════
+        //  CLOUDINARY — Free Cloud File Upload (25GB free, no card)
+        //  Sign up free at cloudinary.com then fill in your details:
+        // ════════════════════════════════════════════════════════
+        const CLOUDINARY_CLOUD_NAME = 'dt0u0isrm';   // ← replace
+        const CLOUDINARY_UPLOAD_PRESET = 'CareerPath_Uploads'; // ← replace
+
+        function showUploadToast(msg, pct) {
+            const toast = document.getElementById('upload-toast');
+            document.getElementById('upload-toast-msg').textContent = msg;
+            document.getElementById('upload-progress-bar').style.width = pct + '%';
+            toast.classList.remove('hidden');
+        }
+        function hideUploadToast() {
+            setTimeout(() => document.getElementById('upload-toast').classList.add('hidden'), 1200);
+        }
+
+        /**
+         * Upload any file (image, PDF) to Cloudinary.
+         * Returns a Promise<secure_url> — permanent public download URL.
+         */
+        function uploadToStorage(file, _path) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+                formData.append('resource_type', 'auto'); // handles pdf + images
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST',
+                    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/auto/upload`
+                );
+
+                xhr.upload.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const pct = Math.round((e.loaded / e.total) * 100);
+                        showUploadToast(`Uploading ${file.name} — ${pct}%`, pct);
+                    }
+                };
+
+                xhr.onload = () => {
+                    hideUploadToast();
+                    if (xhr.status === 200) {
+                        const res = JSON.parse(xhr.responseText);
+                        resolve(res.secure_url);
+                    } else {
+                        reject(new Error('Cloudinary upload failed: ' + xhr.responseText));
+                    }
+                };
+
+                xhr.onerror = () => { hideUploadToast(); reject(new Error('Network error')); };
+                showUploadToast(`Uploading ${file.name}…`, 0);
+                xhr.send(formData);
+            });
+        }
+
+        /**
+         * Cloudinary deletion requires a server-side API call (needs API secret).
+         * For a static site we just leave the file — free tier has plenty of space.
+         */
+        async function deleteFromStorage(downloadUrl) {
+            // No-op for Cloudinary on a static site (deletion needs server-side secret)
+        }
+
         // --- Application State ---
         let applications = JSON.parse(localStorage.getItem('applications')) || [
             {
@@ -537,24 +620,30 @@
             return "urgency-safe";
         }
 
-        function handleFile(input, type) {
+        async function handleFile(input, type) {
             const file = input.files[0];
-            if (file) {
-                const url = URL.createObjectURL(file);
+            if (!file) return;
+            // Show filename immediately
+            document.getElementById(`${type}-label`).innerText = file.name;
+            document.getElementById(`${type}-label`).classList.add('text-indigo-600', 'font-semibold');
+            try {
+                // Upload to Firebase Storage: files/cv/<timestamp>_filename
+                const path = `files/${type}/${Date.now()}_${file.name}`;
+                const url = await uploadToStorage(file, path);
                 currentFiles[type] = { name: file.name, url: url };
-                document.getElementById(`${type}-label`).innerText = file.name;
-                document.getElementById(`${type}-label`).classList.add('text-indigo-600', 'font-semibold');
+            } catch(err) {
+                console.warn('Storage upload failed, using local URL:', err);
+                currentFiles[type] = { name: file.name, url: URL.createObjectURL(file) };
             }
         }
 
         function downloadFile(url, filename) {
-            if (!url) {
-                alert("Demo file: In a real app, the uploaded file would download here.");
-                return;
-            }
+            if (!url) { alert('No file uploaded yet.'); return; }
+            // Firebase Storage URLs work as direct download links
             const a = document.createElement('a');
             a.href = url;
-            a.download = filename;
+            a.target = '_blank';
+            a.download = filename || 'download';
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -613,13 +702,19 @@
         }
 
         function deleteApp(id) {
+            const app = applications.find(a => a.id === id);
             applications = applications.filter(a => a.id !== id);
             saveApplications();
             renderApplications();
-            // ⚡ Delete only this one doc, not the whole collection
+            // Delete Firestore doc
             db.collection("applications").doc(id).delete().catch(err =>
                 console.warn("Firebase delete failed:", err)
             );
+            // Delete associated Storage files
+            if (app) {
+                deleteFromStorage(app.cvUrl);
+                deleteFromStorage(app.circularUrl);
+            }
         }
 
         document.getElementById('app-form').onsubmit = function(e) {
@@ -1052,41 +1147,64 @@ function renderListRow(app) {
     `;
 }
 
-        function handleProfilePhoto(input) {
+        async function handleProfilePhoto(input) {
             const file = input.files[0];
             if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                document.getElementById('profile-img').src = e.target.result;
-                saveProfile();
-            };
-            reader.readAsDataURL(file);
+            // Show preview immediately via local blob
+            const localUrl = URL.createObjectURL(file);
+            document.getElementById('profile-img').src = localUrl;
+            try {
+                // Upload to Firebase Storage: profile/photo_<uid>.jpg
+                const path = `profile/photo_${Date.now()}_${file.name}`;
+                const url = await uploadToStorage(file, path);
+                // Replace blob with permanent Firebase URL
+                document.getElementById('profile-img').src = url;
+                saveProfile(url);
+            } catch(err) {
+                console.warn('Profile photo upload failed:', err);
+                saveProfile(localUrl);
+            }
         }
 
         function saveApplications() {
             localStorage.setItem('applications', JSON.stringify(applications));
         }
 
-        function saveProfile() {
+        function saveProfile(imgUrl) {
+            const image = imgUrl || document.getElementById('profile-img').src;
             const profile = {
                 name: document.getElementById('user-name').value,
-                image: document.getElementById('profile-img').src
+                email: document.getElementById('user-email') ? document.getElementById('user-email').value : '',
+                phone: document.getElementById('user-phone') ? document.getElementById('user-phone').value : '',
+                image: image,
             };
-
             localStorage.setItem('profile', JSON.stringify(profile));
+            // Also save to Firestore so it syncs across devices
+            db.collection('profile').doc('main').set(profile, { merge: true })
+              .catch(e => console.warn('Profile Firestore save failed:', e));
         }
 
-        function loadProfile() {
-            const saved = JSON.parse(localStorage.getItem('profile'));
+        function applyProfile(saved) {
             if (!saved) return;
-
-            if (saved.name) {
+            if (saved.name && document.getElementById('user-name'))
                 document.getElementById('user-name').value = saved.name;
-            }
-
-            if (saved.image) {
+            if (saved.image && document.getElementById('profile-img'))
                 document.getElementById('profile-img').src = saved.image;
-            }
+        }
+
+        async function loadProfile() {
+            // 1. Load from localStorage instantly
+            const local = JSON.parse(localStorage.getItem('profile'));
+            applyProfile(local);
+            // 2. Then sync from Firestore (so profile is same on all devices)
+            try {
+                const doc = await db.collection('profile').doc('main').get();
+                if (doc.exists) {
+                    const remote = doc.data();
+                    applyProfile(remote);
+                    localStorage.setItem('profile', JSON.stringify(remote));
+                }
+            } catch(e) { console.warn('Profile Firestore load failed:', e); }
         }
 
         async function saveApplicationsToFirebase() {
@@ -1185,6 +1303,15 @@ function renderListRow(app) {
 
 
 
+
+    <!-- Upload Progress Toast -->
+    <div id="upload-toast" class="hidden">
+        <i class="fas fa-cloud-upload-alt text-indigo-400"></i>
+        <span id="upload-toast-msg">Uploading...</span>
+        <div id="upload-progress-bar-wrap">
+            <div id="upload-progress-bar"></div>
+        </div>
+    </div>
 
 </body>
 </html>
