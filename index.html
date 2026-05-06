@@ -487,10 +487,11 @@
         const db = firebase.firestore();
 
         // ════════════════════════════════════════════════════════
-        //  CLOUDINARY — Free Cloud File Upload (25GB free, no card)
-        //  Sign up free at cloudinary.com then fill in your details:
+        //  FILE STORAGE STRATEGY:
+        //  • Profile photo (image)  → Cloudinary (free, works great)
+        //  • CV / Circular (PDF)    → Firestore base64 (free, no restrictions)
         // ════════════════════════════════════════════════════════
-        const CLOUDINARY_CLOUD_NAME = 'dt0u0isrm';
+        const CLOUDINARY_CLOUD_NAME   = 'dt0u0isrm';
         const CLOUDINARY_UPLOAD_PRESET = 'CareerPath_Uploads';
 
         function showUploadToast(msg, pct) {
@@ -503,55 +504,121 @@
             setTimeout(() => document.getElementById('upload-toast').classList.add('hidden'), 1200);
         }
 
-        /**
-         * Upload any file (image, PDF) to Cloudinary.
-         * Returns a Promise<secure_url> — permanent public download URL.
-         */
-        function uploadToStorage(file, _path) {
+        // ── Image upload → Cloudinary ──────────────────────────────────
+        function uploadImageToCloudinary(file) {
             return new Promise((resolve, reject) => {
-                // Use 'raw' for PDFs so Cloudinary doesn't block delivery
-                // Use 'image' for images (jpg, png, etc.)
-                const isPdf = file.type === 'application/pdf';
-                const resourceType = isPdf ? 'raw' : 'image';
-
                 const formData = new FormData();
                 formData.append('file', file);
                 formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-
                 const xhr = new XMLHttpRequest();
                 xhr.open('POST',
-                    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/${resourceType}/upload`
+                    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`
                 );
-
                 xhr.upload.onprogress = (e) => {
-                    if (e.lengthComputable) {
-                        const pct = Math.round((e.loaded / e.total) * 100);
-                        showUploadToast(`Uploading ${file.name} — ${pct}%`, pct);
-                    }
+                    if (e.lengthComputable)
+                        showUploadToast(`Uploading photo — ${Math.round(e.loaded/e.total*100)}%`,
+                            Math.round(e.loaded/e.total*100));
                 };
-
                 xhr.onload = () => {
                     hideUploadToast();
-                    if (xhr.status === 200) {
-                        const res = JSON.parse(xhr.responseText);
-                        resolve(res.secure_url);
-                    } else {
-                        reject(new Error('Cloudinary upload failed: ' + xhr.responseText));
-                    }
+                    xhr.status === 200
+                        ? resolve(JSON.parse(xhr.responseText).secure_url)
+                        : reject(new Error('Cloudinary error'));
                 };
-
                 xhr.onerror = () => { hideUploadToast(); reject(new Error('Network error')); };
-                showUploadToast(`Uploading ${file.name}…`, 0);
+                showUploadToast('Uploading photo…', 0);
                 xhr.send(formData);
             });
         }
 
-        /**
-         * Cloudinary deletion requires a server-side API call (needs API secret).
-         * For a static site we just leave the file — free tier has plenty of space.
-         */
-        async function deleteFromStorage(downloadUrl) {
-            // No-op for Cloudinary on a static site (deletion needs server-side secret)
+        // ── PDF upload → Firestore as base64 ──────────────────────────
+        // Returns { type:'firestore', docId, name, base64 }
+        // The base64 data is stored in a separate Firestore doc to keep
+        // the application docs small.
+        async function uploadPdfToFirestore(file, docId) {
+            return new Promise((resolve, reject) => {
+                showUploadToast(`Reading ${file.name}…`, 20);
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const base64 = e.target.result; // data:application/pdf;base64,...
+                    showUploadToast(`Saving ${file.name} to cloud…`, 60);
+                    try {
+                        await db.collection('files').doc(docId).set({
+                            name: file.name,
+                            data: base64,
+                            uploadedAt: new Date().toISOString()
+                        });
+                        showUploadToast(`${file.name} saved!`, 100);
+                        hideUploadToast();
+                        resolve({ type: 'firestore', docId, name: file.name });
+                    } catch(err) {
+                        hideUploadToast();
+                        reject(err);
+                    }
+                };
+                reader.onerror = () => { hideUploadToast(); reject(new Error('File read error')); };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // ── Unified upload dispatcher ──────────────────────────────────
+        async function uploadToStorage(file, path) {
+            const isPdf = file.type === 'application/pdf';
+            if (isPdf) {
+                // Use path as a unique Firestore doc ID (sanitised)
+                const docId = path.replace(/[^a-zA-Z0-9_-]/g, '_');
+                const result = await uploadPdfToFirestore(file, docId);
+                // Return a special marker URL so we know it's in Firestore
+                return `firestore://${result.docId}||${result.name}`;
+            } else {
+                return await uploadImageToCloudinary(file);
+            }
+        }
+
+        // ── Download dispatcher ────────────────────────────────────────
+        async function downloadFile(url, filename) {
+            if (!url) { alert('No file uploaded yet.'); return; }
+
+            if (url.startsWith('firestore://')) {
+                // Extract doc ID and filename from the marker
+                const part = url.replace('firestore://', '');
+                const [docId, fname] = part.split('||');
+                showUploadToast(`Loading ${fname || filename}…`, 30);
+                try {
+                    const doc = await db.collection('files').doc(docId).get();
+                    if (!doc.exists) { alert('File not found in cloud.'); hideUploadToast(); return; }
+                    const base64 = doc.data().data;
+                    showUploadToast(`Preparing download…`, 80);
+                    const link = document.createElement('a');
+                    link.href = base64;
+                    link.download = fname || filename || 'document.pdf';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    hideUploadToast();
+                } catch(err) {
+                    hideUploadToast();
+                    alert('Download failed: ' + err.message);
+                }
+            } else {
+                // Cloudinary image — open directly
+                const link = document.createElement('a');
+                link.href = url;
+                link.target = '_blank';
+                link.download = filename || 'download';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        }
+
+        async function deleteFromStorage(url) {
+            if (!url) return;
+            if (url.startsWith('firestore://')) {
+                const docId = url.replace('firestore://', '').split('||')[0];
+                db.collection('files').doc(docId).delete().catch(() => {});
+            }
+            // Cloudinary images: deletion needs server secret, skip silently
         }
 
         // --- Application State ---
@@ -641,29 +708,7 @@
             }
         }
 
-        async function downloadFile(url, filename) {
-            if (!url) { alert('No file uploaded yet.'); return; }
-            try {
-                showUploadToast(`Preparing ${filename || 'file'}…`, 80);
-                // Fetch via proxy-free blob trick — works for Cloudinary raw files
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Fetch failed: ' + response.status);
-                const blob = await response.blob();
-                const blobUrl = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = blobUrl;
-                a.download = filename || 'download';
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
-                hideUploadToast();
-            } catch(e) {
-                hideUploadToast();
-                // Fallback: just open in new tab
-                window.open(url, '_blank');
-            }
-        }
+
 
         function setView(mode) {
             viewMode = mode;
