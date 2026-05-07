@@ -7,8 +7,12 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -20,25 +24,6 @@
         .animate-in { animation: fadeIn 0.2s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
         
-
-
-        /* ===== Upload Progress ===== */
-        #upload-toast {
-            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-            background: #1e293b; color: white; border-radius: 14px;
-            padding: 12px 20px; font-size: 13px; font-weight: 600;
-            display: flex; align-items: center; gap: 12px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.18); z-index: 9999;
-            min-width: 260px; transition: opacity 0.3s;
-        }
-        #upload-toast.hidden { opacity: 0; pointer-events: none; }
-        #upload-progress-bar-wrap {
-            flex: 1; height: 5px; background: #334155; border-radius: 99px; overflow: hidden;
-        }
-        #upload-progress-bar {
-            height: 100%; background: #6366f1; border-radius: 99px;
-            transition: width 0.2s; width: 0%;
-        }
 
         /* ===== Deadline Alert Slider ===== */
         #deadline-slider-wrap {
@@ -135,7 +120,135 @@
         .sort-option.selected i { color: #6366f1; }
         .sort-divider { height: 1px; background: #f1f5f9; margin: 4px 0; }
 
-        /* Dynamic Urgency Classes */
+        /* ===== Auth Modal ===== */
+        #auth-overlay {
+            position: fixed; inset: 0; z-index: 9999;
+            background: linear-gradient(135deg, #eef2ff 0%, #f0fdf4 100%);
+            display: flex; align-items: center; justify-content: center;
+            padding: 16px;
+        }
+        #auth-overlay.hidden { display: none; }
+        .auth-card {
+            background: white; border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(99,102,241,0.15);
+            padding: 40px 36px; width: 100%; max-width: 420px;
+            border: 1px solid #e2e8f0;
+        }
+        .auth-tab { cursor: pointer; padding: 8px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; transition: all 0.15s; }
+        .auth-tab.active { background: #6366f1; color: white; }
+        .auth-tab:not(.active) { color: #94a3b8; }
+        .auth-input { width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; outline: none; transition: border-color 0.15s; box-sizing: border-box; }
+        .auth-input:focus { border-color: #6366f1; }
+        .auth-btn-primary { width: 100%; padding: 11px; background: #6366f1; color: white; font-weight: 700; border-radius: 10px; border: none; cursor: pointer; font-size: 15px; transition: background 0.15s; }
+        .auth-btn-primary:hover { background: #4f46e5; }
+        .auth-btn-google { width: 100%; padding: 10px; background: white; color: #1e293b; font-weight: 600; border-radius: 10px; border: 1.5px solid #e2e8f0; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: border-color 0.15s, box-shadow 0.15s; }
+        .auth-btn-google:hover { border-color: #6366f1; box-shadow: 0 2px 8px rgba(99,102,241,0.12); }
+        #auth-error { color: #ef4444; font-size: 13px; min-height: 18px; text-align: center; }
+
+        /* ===== User Avatar Circle ===== */
+        #user-avatar-circle {
+            width: 38px; height: 38px; border-radius: 50%;
+            overflow: hidden; cursor: pointer;
+            border: 2px solid #e2e8f0;
+            transition: border-color 0.15s, box-shadow 0.15s;
+            flex-shrink: 0;
+        }
+        #user-avatar-circle:hover { border-color: #6366f1; box-shadow: 0 0 0 3px #eef2ff; }
+        #user-avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* ===== Hamburger Menu ===== */
+        #hamburger-wrapper { position: relative; }
+        #hamburger-btn {
+            width: 38px; height: 38px; border-radius: 10px;
+            border: 1px solid #e2e8f0; background: white;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: all 0.15s;
+            color: #475569;
+        }
+        #hamburger-btn:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+        .hamburger-menu {
+            position: absolute; right: 0; top: calc(100% + 8px);
+            background: white; border: 1px solid #e2e8f0;
+            border-radius: 14px; padding: 6px;
+            min-width: 200px; z-index: 500;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            opacity: 0; transform: translateY(-8px) scale(0.97);
+            pointer-events: none;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+        .hamburger-menu.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
+        .hmenu-item {
+            display: flex; align-items: center; justify-content: space-between;
+            gap: 10px; padding: 9px 12px; border-radius: 9px;
+            font-size: 13.5px; font-weight: 600; color: #334155;
+            cursor: pointer; transition: background 0.1s;
+        }
+        .hmenu-item:hover { background: #f1f5f9; }
+        .hmenu-item i.icon { width: 18px; text-align: center; color: #6366f1; font-size: 13px; }
+        .hmenu-item i.arrow { font-size: 10px; color: #94a3b8; }
+        .hmenu-divider { height: 1px; background: #f1f5f9; margin: 4px 0; }
+        .hmenu-item.danger { color: #ef4444; }
+        .hmenu-item.danger i.icon { color: #ef4444; }
+        .hmenu-item.danger:hover { background: #fef2f2; }
+
+        /* Sub-menu */
+        .hmenu-sub {
+            position: absolute; right: calc(100% + 8px); top: 0;
+            background: white; border: 1px solid #e2e8f0;
+            border-radius: 14px; padding: 6px;
+            min-width: 180px; z-index: 501;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+            opacity: 0; transform: translateX(6px) scale(0.97);
+            pointer-events: none;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+        .hmenu-sub.open { opacity: 1; transform: translateX(0) scale(1); pointer-events: all; }
+        .hmenu-sub-wrapper { position: relative; }
+
+        /* ===== Profile Modal ===== */
+        #profile-modal-overlay {
+            position: fixed; inset: 0; z-index: 8000;
+            background: rgba(15,23,42,0.55); backdrop-filter: blur(4px);
+            display: flex; align-items: center; justify-content: center; padding: 16px;
+        }
+        #profile-modal-overlay.hidden { display: none; }
+        .profile-modal-card {
+            background: white; border-radius: 22px;
+            box-shadow: 0 20px 60px rgba(99,102,241,0.18);
+            padding: 0; width: 100%; max-width: 500px;
+            overflow: hidden;
+        }
+        .pmodal-header {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            padding: 28px 32px 24px;
+            color: white;
+        }
+        .pmodal-body { padding: 24px 32px 28px; }
+        .pmodal-input {
+            width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0;
+            border-radius: 10px; font-size: 14px; outline: none;
+            transition: border-color 0.15s; box-sizing: border-box;
+            font-family: inherit;
+        }
+        .pmodal-input:focus { border-color: #6366f1; }
+        .pmodal-input:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
+        .pmodal-label { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+
+        /* Profile photo in modal */
+        .pmodal-photo-wrap {
+            width: 80px; height: 80px; border-radius: 50%;
+            overflow: hidden; border: 3px solid rgba(255,255,255,0.5);
+            cursor: pointer; position: relative;
+        }
+        .pmodal-photo-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .pmodal-photo-overlay {
+            position: absolute; inset: 0; background: rgba(0,0,0,0.45);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: 0.2s;
+        }
+        .pmodal-photo-wrap:hover .pmodal-photo-overlay { opacity: 1; }
+
+
         .urgency-safe { border-left: 4px solid #10b981 !important; background-color: #f0fdf4; }
         .urgency-warning { border-left: 4px solid #f59e0b !important; background-color: #fffbeb; }
         .urgency-danger { border-left: 4px solid #ef4444 !important; background-color: #fef2f2; }
@@ -238,6 +351,60 @@
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
 
+    <!-- ===== AUTH OVERLAY ===== -->
+    <div id="auth-overlay" class="hidden">
+        <div class="auth-card">
+            <!-- Logo -->
+            <div class="flex items-center gap-2 mb-6">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-lg shadow-indigo-200">
+                    <i class="fas fa-briefcase"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-800">CareerPath</h1>
+            </div>
+            <p class="text-slate-500 text-sm mb-6">Sign in to track your job applications privately and securely.</p>
+
+            <!-- Tabs -->
+            <div class="flex gap-2 bg-slate-100 p-1 rounded-10 mb-6 w-fit rounded-xl">
+                <div class="auth-tab active" id="tab-login" onclick="switchTab('login')">Sign In</div>
+                <div class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</div>
+            </div>
+
+            <!-- Login Form -->
+            <div id="form-login">
+                <div class="flex flex-col gap-3 mb-4">
+                    <input id="login-email" class="auth-input" type="email" placeholder="Email address" />
+                    <input id="login-password" class="auth-input" type="password" placeholder="Password" />
+                </div>
+                <button class="auth-btn-primary mb-3" onclick="loginWithEmail()">Sign In</button>
+            </div>
+
+            <!-- Register Form -->
+            <div id="form-register" class="hidden">
+                <div class="flex flex-col gap-3 mb-4">
+                    <input id="reg-email" class="auth-input" type="email" placeholder="Email address" />
+                    <input id="reg-password" class="auth-input" type="password" placeholder="Password (min 6 chars)" />
+                    <input id="reg-confirm" class="auth-input" type="password" placeholder="Confirm password" />
+                </div>
+                <button class="auth-btn-primary mb-3" onclick="registerWithEmail()">Create Account</button>
+            </div>
+
+            <p id="auth-error" class="mb-3"></p>
+
+            <!-- Divider -->
+            <div class="flex items-center gap-3 mb-3">
+                <hr class="flex-1 border-slate-200">
+                <span class="text-xs text-slate-400 font-medium">OR</span>
+                <hr class="flex-1 border-slate-200">
+            </div>
+
+            <!-- Google -->
+            <button class="auth-btn-google" onclick="loginWithGoogle()">
+                <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
+                Continue with Google
+            </button>
+        </div>
+    </div>
+
     <!-- Header -->
     <header class="bg-white border-b sticky top-0 z-30">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
@@ -247,10 +414,66 @@
                 </div>
                 <h1 class="text-xl font-bold tracking-tight text-slate-800">CareerPath</h1>
             </div>
-            <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm active:scale-95">
-                <i class="fas fa-plus"></i>
-                Add Application
-            </button>
+            <div class="flex items-center gap-3">
+                <!-- Avatar Circle -->
+                <div id="user-avatar-circle" onclick="openProfileModal()" title="Edit Profile">
+                    <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=user" alt="avatar">
+                </div>
+
+                <!-- Add Application -->
+                <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm active:scale-95">
+                    <i class="fas fa-plus"></i>
+                    <span class="hidden sm:inline">Add Application</span>
+                </button>
+
+                <!-- Hamburger Menu -->
+                <div id="hamburger-wrapper">
+                    <button id="hamburger-btn" onclick="toggleHamburger()" title="Menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="hamburger-menu" id="hamburger-menu">
+                        <!-- Profile -->
+                        <div class="hmenu-item" onclick="openProfileModal(); closeHamburger()">
+                            <span><i class="icon fas fa-user-circle"></i> Profile</span>
+                        </div>
+                        <div class="hmenu-divider"></div>
+                        <!-- Export/Import submenu -->
+                        <div class="hmenu-sub-wrapper" id="ei-wrapper">
+                            <div class="hmenu-item" onclick="toggleEIMenu(event)">
+                                <span><i class="icon fas fa-exchange-alt"></i> Export / Import</span>
+                                <i class="arrow fas fa-chevron-left"></i>
+                            </div>
+                            <div class="hmenu-sub" id="ei-menu">
+                                <!-- Export sub -->
+                                <div class="hmenu-sub-wrapper" id="export-wrapper">
+                                    <div class="hmenu-item" onclick="toggleExportMenu(event)">
+                                        <span><i class="icon fas fa-download"></i> Export</span>
+                                        <i class="arrow fas fa-chevron-left"></i>
+                                    </div>
+                                    <div class="hmenu-sub" id="export-menu" style="top:0">
+                                        <div class="hmenu-item" onclick="exportPDF(); closeHamburger()">
+                                            <span><i class="icon far fa-file-pdf" style="color:#ef4444"></i> Download as PDF</span>
+                                        </div>
+                                        <div class="hmenu-item" onclick="exportExcel(); closeHamburger()">
+                                            <span><i class="icon far fa-file-excel" style="color:#16a34a"></i> Download as Excel</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="hmenu-divider"></div>
+                                <!-- Import -->
+                                <div class="hmenu-item" onclick="triggerImport(); closeHamburger()">
+                                    <span><i class="icon fas fa-upload"></i> Import from Excel</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="hmenu-divider"></div>
+                        <!-- Logout -->
+                        <div class="hmenu-item danger" onclick="signOut(); closeHamburger()">
+                            <span><i class="icon fas fa-sign-out-alt"></i> Logout</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </header>
 
@@ -473,6 +696,58 @@
         </div>
     </div>
 
+    <!-- Hidden import input -->
+    <input type="file" id="import-excel-input" class="hidden" accept=".xlsx,.xls" onchange="importFromExcel(this)">
+
+    <!-- ===== PROFILE MODAL ===== -->
+    <div id="profile-modal-overlay" class="hidden">
+        <div class="profile-modal-card animate-in">
+            <div class="pmodal-header">
+                <div class="flex items-center gap-4">
+                    <div class="pmodal-photo-wrap" onclick="document.getElementById('pmodal-photo-input').click()">
+                        <img id="pmodal-photo" src="https://api.dicebear.com/7.x/avataaars/svg?seed=user" alt="Profile">
+                        <div class="pmodal-photo-overlay"><i class="fas fa-camera text-white text-sm"></i></div>
+                    </div>
+                    <input type="file" id="pmodal-photo-input" class="hidden" accept="image/*" onchange="handlePmodalPhoto(this)">
+                    <div>
+                        <h2 class="text-xl font-bold">Your Profile</h2>
+                        <p class="text-indigo-200 text-sm mt-0.5">Your details appear on the dashboard</p>
+                    </div>
+                </div>
+            </div>
+            <div class="pmodal-body">
+                <div class="grid grid-cols-1 gap-4">
+                    <div>
+                        <label class="pmodal-label">Full Name</label>
+                        <input id="pmodal-name" class="pmodal-input" type="text" placeholder="Your full name">
+                    </div>
+                    <div>
+                        <label class="pmodal-label">Email Address</label>
+                        <input id="pmodal-email" class="pmodal-input" type="email" disabled placeholder="Your email">
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="pmodal-label">Phone</label>
+                            <input id="pmodal-phone" class="pmodal-input" type="tel" placeholder="+880...">
+                        </div>
+                        <div>
+                            <label class="pmodal-label">LinkedIn URL</label>
+                            <input id="pmodal-linkedin" class="pmodal-input" type="url" placeholder="linkedin.com/in/...">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="pmodal-label">Address</label>
+                        <input id="pmodal-address" class="pmodal-input" type="text" placeholder="Your address">
+                    </div>
+                </div>
+                <div class="flex gap-3 mt-6">
+                    <button id="pmodal-skip-btn" onclick="skipProfileModal()" class="flex-1 px-4 py-2.5 border border-slate-200 text-slate-500 font-bold rounded-lg hover:bg-slate-50 transition-colors">Skip</button>
+                    <button onclick="saveProfileModal()" class="flex-1 px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-md transition-colors">Save Profile</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script>
 
         // 🔥 Firebase Config (replace with your own)
@@ -485,141 +760,157 @@
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
 
-        // ════════════════════════════════════════════════════════
-        //  FILE STORAGE STRATEGY:
-        //  • Profile photo (image)  → Cloudinary (free, works great)
-        //  • CV / Circular (PDF)    → Firestore base64 (free, no restrictions)
-        // ════════════════════════════════════════════════════════
-        const CLOUDINARY_CLOUD_NAME   = 'dt0u0isrm';
-        const CLOUDINARY_UPLOAD_PRESET = 'CareerPath_Uploads';
+        // ===================================================
+        // ☁️  FREE CLOUD STORAGE CONFIG
+        // ===================================================
+        // 1️⃣  CLOUDINARY — free image hosting (photos)
+        //     Sign up free at cloudinary.com → Settings → API Keys
+        const CLOUDINARY_CLOUD_NAME = 'dt0u0isrm';   // ← replace
+        const CLOUDINARY_UPLOAD_PRESET = 'CareerPath_Uploads'; // ← replace (unsigned preset)
 
-        function showUploadToast(msg, pct) {
-            const toast = document.getElementById('upload-toast');
-            document.getElementById('upload-toast-msg').textContent = msg;
-            document.getElementById('upload-progress-bar').style.width = pct + '%';
-            toast.classList.remove('hidden');
-        }
-        function hideUploadToast() {
-            setTimeout(() => document.getElementById('upload-toast').classList.add('hidden'), 1200);
-        }
+        // 2️⃣  SUPABASE — free file hosting (PDFs / any file)
+        //     Sign up free at supabase.com → Project Settings → API
+        const SUPABASE_URL = 'https://nbnrsqwtzxqildbaxuxn.supabase.co';           // ← replace  e.g. https://xxx.supabase.co
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ibnJzcXd0enhxaWxkYmF4dXhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwODk2MDksImV4cCI6MjA5MzY2NTYwOX0.3Dp94d-Aot2viZUAjYxalTtMNH5s9o7ZACW_jPyzQoE'; // ← replace
+        const SUPABASE_BUCKET = 'careerpath-files';          // create this bucket in Supabase Storage
 
-        // ── Image upload → Cloudinary ──────────────────────────────────
-        function uploadImageToCloudinary(file) {
-            return new Promise((resolve, reject) => {
-                const formData = new FormData();
-                formData.append('file', file);
-                formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-                const xhr = new XMLHttpRequest();
-                xhr.open('POST',
-                    `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`
-                );
-                xhr.upload.onprogress = (e) => {
-                    if (e.lengthComputable)
-                        showUploadToast(`Uploading photo — ${Math.round(e.loaded/e.total*100)}%`,
-                            Math.round(e.loaded/e.total*100));
-                };
-                xhr.onload = () => {
-                    hideUploadToast();
-                    xhr.status === 200
-                        ? resolve(JSON.parse(xhr.responseText).secure_url)
-                        : reject(new Error('Cloudinary error'));
-                };
-                xhr.onerror = () => { hideUploadToast(); reject(new Error('Network error')); };
-                showUploadToast('Uploading photo…', 0);
-                xhr.send(formData);
+        // ── Upload photo to Cloudinary ──────────────────────
+        async function uploadToCloudinary(file) {
+            const fd = new FormData();
+            fd.append('file', file);
+            fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+            fd.append('folder', 'careerpath');
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+                method: 'POST', body: fd
             });
+            if (!res.ok) throw new Error('Cloudinary upload failed');
+            const data = await res.json();
+            return data.secure_url; // permanent HTTPS URL
         }
 
-        // ── PDF upload → Firestore as base64 ──────────────────────────
-        // Returns { type:'firestore', docId, name, base64 }
-        // The base64 data is stored in a separate Firestore doc to keep
-        // the application docs small.
-        async function uploadPdfToFirestore(file, docId) {
-            return new Promise((resolve, reject) => {
-                showUploadToast(`Reading ${file.name}…`, 20);
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                    const base64 = e.target.result; // data:application/pdf;base64,...
-                    showUploadToast(`Saving ${file.name} to cloud…`, 60);
-                    try {
-                        await db.collection('files').doc(docId).set({
-                            name: file.name,
-                            data: base64,
-                            uploadedAt: new Date().toISOString()
-                        });
-                        showUploadToast(`${file.name} saved!`, 100);
-                        hideUploadToast();
-                        resolve({ type: 'firestore', docId, name: file.name });
-                    } catch(err) {
-                        hideUploadToast();
-                        reject(err);
-                    }
-                };
-                reader.onerror = () => { hideUploadToast(); reject(new Error('File read error')); };
-                reader.readAsDataURL(file);
+        // ── Upload PDF/file to Supabase Storage ─────────────
+        async function uploadToSupabase(file, uid) {
+            const ext = file.name.split('.').pop();
+            const path = `${uid}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+            const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${path}`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                    'Content-Type': file.type || 'application/octet-stream',
+                    'x-upsert': 'true'
+                },
+                body: file
             });
+            if (!res.ok) throw new Error('Supabase upload failed');
+            // Build public URL
+            return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${path}`;
         }
 
-        // ── Unified upload dispatcher ──────────────────────────────────
-        async function uploadToStorage(file, path) {
-            const isPdf = file.type === 'application/pdf';
-            if (isPdf) {
-                // Use path as a unique Firestore doc ID (sanitised)
-                const docId = path.replace(/[^a-zA-Z0-9_-]/g, '_');
-                const result = await uploadPdfToFirestore(file, docId);
-                // Return a special marker URL so we know it's in Firestore
-                return `firestore://${result.docId}||${result.name}`;
-            } else {
-                return await uploadImageToCloudinary(file);
+        // ===== Current user =====
+        let currentUser = null;
+        function userAppsRef() {
+            return db.collection('users').doc(currentUser.uid).collection('applications');
+        }
+
+        // ===== AUTH FUNCTIONS =====
+        function switchTab(tab) {
+            document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
+            document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
+            document.getElementById('tab-login').classList.toggle('active', tab === 'login');
+            document.getElementById('tab-register').classList.toggle('active', tab === 'register');
+            document.getElementById('auth-error').textContent = '';
+        }
+
+        function setAuthError(msg) {
+            document.getElementById('auth-error').textContent = msg;
+        }
+
+        async function loginWithEmail() {
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-password').value;
+            if (!email || !pass) return setAuthError('Please fill in all fields.');
+            try {
+                await auth.signInWithEmailAndPassword(email, pass);
+            } catch (e) {
+                setAuthError(e.message.replace('Firebase: ', ''));
             }
         }
 
-        // ── Download dispatcher ────────────────────────────────────────
-        async function downloadFile(url, filename) {
-            if (!url) { alert('No file uploaded yet.'); return; }
+        async function registerWithEmail() {
+            const email = document.getElementById('reg-email').value.trim();
+            const pass = document.getElementById('reg-password').value;
+            const confirm = document.getElementById('reg-confirm').value;
+            if (!email || !pass) return setAuthError('Please fill in all fields.');
+            if (pass !== confirm) return setAuthError('Passwords do not match.');
+            if (pass.length < 6) return setAuthError('Password must be at least 6 characters.');
+            try {
+                isNewRegistration = true;
+                await auth.createUserWithEmailAndPassword(email, pass);
+            } catch (e) {
+                isNewRegistration = false;
+                setAuthError(e.message.replace('Firebase: ', ''));
+            }
+        }
 
-            if (url.startsWith('firestore://')) {
-                // Extract doc ID and filename from the marker
-                const part = url.replace('firestore://', '');
-                const [docId, fname] = part.split('||');
-                showUploadToast(`Loading ${fname || filename}…`, 30);
-                try {
-                    const doc = await db.collection('files').doc(docId).get();
-                    if (!doc.exists) { alert('File not found in cloud.'); hideUploadToast(); return; }
-                    const base64 = doc.data().data;
-                    showUploadToast(`Preparing download…`, 80);
-                    const link = document.createElement('a');
-                    link.href = base64;
-                    link.download = fname || filename || 'document.pdf';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    hideUploadToast();
-                } catch(err) {
-                    hideUploadToast();
-                    alert('Download failed: ' + err.message);
+        async function loginWithGoogle() {
+            const provider = new firebase.auth.GoogleAuthProvider();
+            try {
+                await auth.signInWithPopup(provider);
+            } catch (e) {
+                setAuthError(e.message.replace('Firebase: ', ''));
+            }
+        }
+
+        function signOut() {
+            if (confirm('Sign out of CareerPath?')) auth.signOut();
+        }
+
+        // ===== AUTH STATE LISTENER =====
+        let isNewRegistration = false;
+        // Show a brief loading screen so the auth overlay never flashes on refresh
+        document.body.insertAdjacentHTML('afterbegin', `
+            <div id="app-loading" style="position:fixed;inset:0;z-index:99999;background:#eef2ff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
+                <div style="width:44px;height:44px;border:4px solid #c7d2fe;border-top-color:#6366f1;border-radius:50%;animation:spin 0.7s linear infinite;"></div>
+                <span style="font-size:14px;font-weight:600;color:#6366f1;">Loading CareerPath…</span>
+            </div>
+            <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+        `);
+
+        auth.onAuthStateChanged(async user => {
+            // Remove loading screen
+            const loader = document.getElementById('app-loading');
+            if (loader) loader.remove();
+
+            if (user) {
+                currentUser = user;
+                document.getElementById('auth-overlay').classList.add('hidden');
+
+                // Set avatar from Google account if available
+                if (user.photoURL) document.getElementById('user-avatar').src = user.photoURL;
+
+                // Clear profile fields before loading new user's profile
+                clearProfileSection();
+
+                // Load profile then applications
+                applications = [];
+                renderApplications();
+                await loadUserProfile();
+                loadApplicationsFromFirebase();
+
+                // If new registration, show profile modal
+                if (isNewRegistration) {
+                    isNewRegistration = false;
+                    setTimeout(() => openProfileModal(true), 400);
                 }
             } else {
-                // Cloudinary image — open directly
-                const link = document.createElement('a');
-                link.href = url;
-                link.target = '_blank';
-                link.download = filename || 'download';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                currentUser = null;
+                applications = [];
+                clearProfileSection();
+                document.getElementById('auth-overlay').classList.remove('hidden');
             }
-        }
-
-        async function deleteFromStorage(url) {
-            if (!url) return;
-            if (url.startsWith('firestore://')) {
-                const docId = url.replace('firestore://', '').split('||')[0];
-                db.collection('files').doc(docId).delete().catch(() => {});
-            }
-            // Cloudinary images: deletion needs server secret, skip silently
-        }
+        });
 
         // --- Application State ---
         let applications = JSON.parse(localStorage.getItem('applications')) || [
@@ -694,21 +985,37 @@
         async function handleFile(input, type) {
             const file = input.files[0];
             if (!file) return;
-            // Show filename immediately
-            document.getElementById(`${type}-label`).innerText = file.name;
-            document.getElementById(`${type}-label`).classList.add('text-indigo-600', 'font-semibold');
+            const label = document.getElementById(`${type}-label`);
+            label.innerText = '⏳ Uploading…';
+
             try {
-                // Upload to Firebase Storage: files/cv/<timestamp>_filename
-                const path = `files/${type}/${Date.now()}_${file.name}`;
-                const url = await uploadToStorage(file, path);
-                currentFiles[type] = { name: file.name, url: url };
-            } catch(err) {
-                console.warn('Storage upload failed, using local URL:', err);
-                currentFiles[type] = { name: file.name, url: URL.createObjectURL(file) };
+                const uid = currentUser ? currentUser.uid : 'guest';
+                const url = await uploadToSupabase(file, uid);
+                currentFiles[type] = { name: file.name, url };
+                label.innerText = '✅ ' + file.name;
+                label.classList.add('text-indigo-600', 'font-semibold');
+            } catch (err) {
+                console.error(err);
+                // Fallback to local blob if Supabase not configured yet
+                const url = URL.createObjectURL(file);
+                currentFiles[type] = { name: file.name, url };
+                label.innerText = file.name;
+                label.classList.add('text-indigo-600', 'font-semibold');
             }
         }
 
-
+        function downloadFile(url, filename) {
+            if (!url) { alert('No file attached.'); return; }
+            // Cloud URLs — open directly in new tab (works for Supabase public URLs)
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
 
         function setView(mode) {
             viewMode = mode;
@@ -763,19 +1070,11 @@
         }
 
         function deleteApp(id) {
-            const app = applications.find(a => a.id === id);
             applications = applications.filter(a => a.id !== id);
             saveApplications();
             renderApplications();
-            // Delete Firestore doc
-            db.collection("applications").doc(id).delete().catch(err =>
-                console.warn("Firebase delete failed:", err)
-            );
-            // Delete associated Storage files
-            if (app) {
-                deleteFromStorage(app.cvUrl);
-                deleteFromStorage(app.circularUrl);
-            }
+            // ⚡ Delete only this one doc
+            if (currentUser) userAppsRef().doc(id).delete().catch(err => console.warn("Firebase delete failed:", err));
         }
 
         document.getElementById('app-form').onsubmit = function(e) {
@@ -809,7 +1108,7 @@
             saveApplications();
             renderApplications();
             // ⚡ Only write/update this single doc in Firestore
-            db.collection("applications").doc(appData.id).set(appData).catch(err =>
+            if (currentUser) userAppsRef().doc(appData.id).set(appData).catch(err =>
                 console.warn("Firebase save failed:", err)
             );
         };
@@ -1211,19 +1510,31 @@ function renderListRow(app) {
         async function handleProfilePhoto(input) {
             const file = input.files[0];
             if (!file) return;
-            // Show preview immediately via local blob
-            const localUrl = URL.createObjectURL(file);
-            document.getElementById('profile-img').src = localUrl;
+            const uid = currentUser ? currentUser.uid : 'local';
+
+            // Show preview instantly while uploading
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('profile-img').src = e.target.result;
+                document.getElementById('user-avatar').src = e.target.result;
+                // Save locally immediately as fallback
+                localStorage.setItem('profile_photo_' + uid, e.target.result);
+            };
+            reader.readAsDataURL(file);
+
+            // Upload to Cloudinary and replace with permanent URL
             try {
-                // Upload to Firebase Storage: profile/photo_<uid>.jpg
-                const path = `profile/photo_${Date.now()}_${file.name}`;
-                const url = await uploadToStorage(file, path);
-                // Replace blob with permanent Firebase URL
+                const url = await uploadToCloudinary(file);
                 document.getElementById('profile-img').src = url;
-                saveProfile(url);
-            } catch(err) {
-                console.warn('Profile photo upload failed:', err);
-                saveProfile(localUrl);
+                document.getElementById('user-avatar').src = url;
+                localStorage.setItem('profile_photo_' + uid, url);
+                // Save URL to Firestore profile too
+                if (currentUser) {
+                    db.collection('users').doc(uid).set({ profile: { photoURL: url } }, { merge: true }).catch(()=>{});
+                }
+            } catch(e) {
+                // Keep local base64 as fallback — already saved above
+                console.warn('Cloudinary upload failed, using local storage:', e);
             }
         }
 
@@ -1231,89 +1542,281 @@ function renderListRow(app) {
             localStorage.setItem('applications', JSON.stringify(applications));
         }
 
-        function saveProfile(imgUrl) {
-            const image = imgUrl || document.getElementById('profile-img').src;
-            const profile = {
-                name: document.getElementById('user-name').value,
-                email: document.getElementById('user-email') ? document.getElementById('user-email').value : '',
-                phone: document.getElementById('user-phone') ? document.getElementById('user-phone').value : '',
-                image: image,
-            };
-            localStorage.setItem('profile', JSON.stringify(profile));
-            // Also save to Firestore so it syncs across devices
-            db.collection('profile').doc('main').set(profile, { merge: true })
-              .catch(e => console.warn('Profile Firestore save failed:', e));
+        // ===== HAMBURGER MENU =====
+        function toggleHamburger() {
+            document.getElementById('hamburger-menu').classList.toggle('open');
         }
-
-        function applyProfile(saved) {
-            if (!saved) return;
-            if (saved.name && document.getElementById('user-name'))
-                document.getElementById('user-name').value = saved.name;
-            if (saved.image && document.getElementById('profile-img'))
-                document.getElementById('profile-img').src = saved.image;
+        function closeHamburger() {
+            document.getElementById('hamburger-menu').classList.remove('open');
+            document.getElementById('ei-menu').classList.remove('open');
+            document.getElementById('export-menu').classList.remove('open');
         }
-
-        async function loadProfile() {
-            // 1. Load from localStorage instantly
-            const local = JSON.parse(localStorage.getItem('profile'));
-            applyProfile(local);
-            // 2. Then sync from Firestore (so profile is same on all devices)
-            try {
-                const doc = await db.collection('profile').doc('main').get();
-                if (doc.exists) {
-                    const remote = doc.data();
-                    applyProfile(remote);
-                    localStorage.setItem('profile', JSON.stringify(remote));
-                }
-            } catch(e) { console.warn('Profile Firestore load failed:', e); }
+        function toggleEIMenu(e) {
+            e.stopPropagation();
+            document.getElementById('ei-menu').classList.toggle('open');
+            document.getElementById('export-menu').classList.remove('open');
         }
-
-        async function saveApplicationsToFirebase() {
-            // ⚡ Never deletes — only upserts changed/new docs using batched writes
-            try {
-                const BATCH_SIZE = 450;
-                for (let i = 0; i < applications.length; i += BATCH_SIZE) {
-                    const batch = db.batch();
-                    const chunk = applications.slice(i, i + BATCH_SIZE);
-                    chunk.forEach(app => {
-                        const ref = db.collection("applications").doc(app.id);
-                        batch.set(ref, app, { merge: true }); // merge:true preserves any extra fields
-                    });
-                    await batch.commit();
-                }
-            } catch (err) {
-                console.warn("Firebase save failed, data is safe in localStorage:", err);
+        function toggleExportMenu(e) {
+            e.stopPropagation();
+            document.getElementById('export-menu').classList.toggle('open');
+        }
+        document.addEventListener('click', function(e) {
+            if (!document.getElementById('hamburger-wrapper').contains(e.target)) closeHamburger();
+            // Sort menu
+            const wrapper = document.getElementById('sort-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                document.getElementById('sort-btn').classList.remove('open');
+                document.getElementById('sort-menu').classList.remove('open');
             }
+        });
+
+        // ===== EXPORT PDF =====
+        function exportPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape' });
+            doc.setFontSize(16);
+            doc.text('CareerPath — Job Applications', 14, 16);
+            doc.setFontSize(10);
+            doc.text('Exported: ' + new Date().toLocaleDateString(), 14, 23);
+            const cols = ['Company','Role','Status','Sector','Location','Salary','Applied','Deadline','Job Link'];
+            const rows = applications.map(a => [
+                a.company, a.role, a.status, a.sector === 'govt' ? 'Government' : 'Non-Govt',
+                a.location||'', a.salary||'', a.dateApplied||'', a.lastDate||'', a.url||''
+            ]);
+            doc.autoTable({ head: [cols], body: rows, startY: 28, styles: { fontSize: 8 }, headStyles: { fillColor: [99,102,241] } });
+            doc.save('CareerPath_Applications.pdf');
+        }
+
+        // ===== EXPORT EXCEL =====
+        function exportExcel() {
+            const ws_data = [
+                ['Company','Role','Status','Sector','Location','Salary','Job Type','Date Applied','Deadline','Job Link'],
+                ...applications.map(a => [
+                    a.company, a.role, a.status, a.sector === 'govt' ? 'Government' : 'Non-Govt',
+                    a.location||'', a.salary||'', a.jobType||'', a.dateApplied||'', a.lastDate||'', a.url||''
+                ])
+            ];
+            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.aoa_to_sheet(ws_data);
+            ws['!cols'] = ws_data[0].map(() => ({ wch: 20 }));
+            XLSX.utils.book_append_sheet(wb, ws, 'Applications');
+            XLSX.writeFile(wb, 'CareerPath_Applications.xlsx');
+        }
+
+        // ===== IMPORT EXCEL =====
+        function triggerImport() {
+            document.getElementById('import-excel-input').value = '';
+            document.getElementById('import-excel-input').click();
+        }
+        function importFromExcel(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const wb = XLSX.read(e.target.result, { type: 'array' });
+                    const ws = wb.Sheets[wb.SheetNames[0]];
+                    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                    if (rows.length < 2) return alert('No data found in the Excel file.');
+                    // Header: Company, Role, Status, Sector, Location, Salary, Job Type, Date Applied, Deadline, Job Link
+                    let imported = 0;
+                    for (let i = 1; i < rows.length; i++) {
+                        const r = rows[i];
+                        if (!r[0]) continue; // skip empty rows
+                        const app = {
+                            id: Date.now().toString() + i,
+                            company: r[0] || '',
+                            role: r[1] || '',
+                            status: r[2] || 'applied',
+                            sector: (r[3] || '').toLowerCase().includes('govt') ? 'govt' : 'non-govt',
+                            location: r[4] || '',
+                            salary: r[5] || '',
+                            jobType: r[6] || '',
+                            dateApplied: r[7] || '',
+                            lastDate: r[8] || '',
+                            url: r[9] || '',
+                            cvName: '', cvUrl: null, circularName: '', circularUrl: null
+                        };
+                        applications.unshift(app);
+                        if (currentUser) {
+                            await userAppsRef().doc(app.id).set(app).catch(()=>{});
+                        }
+                        imported++;
+                    }
+                    saveApplications();
+                    renderApplications();
+                    alert(`✅ Successfully imported ${imported} application${imported !== 1 ? 's' : ''}!`);
+                } catch(err) {
+                    alert('Error reading Excel file. Please use the exported template format.');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // ===== PROFILE MODAL =====
+        let profileModalIsNew = false;
+
+        function openProfileModal(isNew = false) {
+            profileModalIsNew = isNew;
+            const overlay = document.getElementById('profile-modal-overlay');
+            // Fill fields
+            const p = getLocalProfile();
+            document.getElementById('pmodal-name').value = p.name || '';
+            document.getElementById('pmodal-email').value = currentUser ? currentUser.email : '';
+            document.getElementById('pmodal-phone').value = p.phone || '';
+            document.getElementById('pmodal-linkedin').value = p.linkedin || '';
+            document.getElementById('pmodal-address').value = p.address || '';
+            document.getElementById('pmodal-photo').src = p.image || document.getElementById('user-avatar').src;
+            // Show/hide skip button
+            document.getElementById('pmodal-skip-btn').style.display = isNew ? '' : 'none';
+            overlay.classList.remove('hidden');
+        }
+
+        function skipProfileModal() {
+            document.getElementById('profile-modal-overlay').classList.add('hidden');
+        }
+
+        async function saveProfileModal() {
+            const name = document.getElementById('pmodal-name').value.trim();
+            const phone = document.getElementById('pmodal-phone').value.trim();
+            const linkedin = document.getElementById('pmodal-linkedin').value.trim();
+            const address = document.getElementById('pmodal-address').value.trim();
+            const image = document.getElementById('pmodal-photo').src;
+            const uid = currentUser ? currentUser.uid : 'local';
+
+            // Save photo in its own dedicated key — never sent to Firestore as base64
+            if (image && !image.includes('dicebear') && !image.startsWith('https://api.')) {
+                localStorage.setItem('profile_photo_' + uid, image);
+            }
+
+            // Text-only profile saved to localStorage + Firestore
+            const textProfile = { name, phone, linkedin, address };
+            localStorage.setItem('profile_' + uid, JSON.stringify(textProfile));
+
+            if (currentUser) {
+                const storedPhoto = localStorage.getItem('profile_photo_' + uid) || '';
+                const isCloudUrl = storedPhoto.startsWith('https://res.cloudinary') || storedPhoto.startsWith('https://');
+                db.collection('users').doc(currentUser.uid).set({
+                    profile: { ...textProfile, ...(isCloudUrl ? { photoURL: storedPhoto } : {}) }
+                }, { merge: true }).catch(()=>{});
+            }
+
+            applyProfileToPage({ ...textProfile, image });
+            document.getElementById('profile-modal-overlay').classList.add('hidden');
+        }
+
+        async function handlePmodalPhoto(input) {
+            const file = input.files[0];
+            if (!file) return;
+            // Instant local preview
+            const reader = new FileReader();
+            reader.onload = (e) => { document.getElementById('pmodal-photo').src = e.target.result; };
+            reader.readAsDataURL(file);
+            // Upload to Cloudinary in background
+            try {
+                const url = await uploadToCloudinary(file);
+                document.getElementById('pmodal-photo').src = url;
+                // Store permanently right away
+                const uid = currentUser ? currentUser.uid : 'local';
+                localStorage.setItem('profile_photo_' + uid, url);
+            } catch(e) {
+                console.warn('Cloudinary upload failed:', e);
+            }
+        }
+
+        function getLocalProfile() {
+            const uid = currentUser ? currentUser.uid : 'local';
+            const text = JSON.parse(localStorage.getItem('profile_' + uid) || '{}');
+            // Photo lives in its own key — can never be overwritten by Firestore sync
+            const photo = localStorage.getItem('profile_photo_' + uid);
+            if (photo) text.image = photo;
+            return text;
+        }
+
+        function clearProfileSection() {
+            const nameEl = document.getElementById('user-name');
+            if (nameEl) nameEl.value = '';
+            const phoneEl = document.getElementById('user-phone-text');
+            if (phoneEl) phoneEl.textContent = '—';
+            const addressEl = document.getElementById('user-address-text');
+            if (addressEl) addressEl.textContent = '—';
+            const linkedinEl = document.getElementById('user-linkedin-link');
+            if (linkedinEl) { linkedinEl.href = '#'; linkedinEl.textContent = '—'; }
+            const emailEl = document.getElementById('user-email-link');
+            if (emailEl) { emailEl.href = '#'; emailEl.textContent = '—'; }
+            const avatarEl = document.getElementById('user-avatar');
+            if (avatarEl) avatarEl.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=user';
+            const profileImgEl = document.getElementById('profile-img');
+            if (profileImgEl) profileImgEl.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=user';
+        }
+
+        function applyProfileToPage(p) {
+            if (p.name) document.getElementById('user-name').value = p.name;
+            if (p.phone) document.getElementById('user-phone-text').textContent = p.phone;
+            if (p.address) document.getElementById('user-address-text').textContent = p.address;
+            const photo = p.image || p.photoURL;
+            if (photo && !photo.includes('dicebear') && !photo.startsWith('https://api.dicebear')) {
+                document.getElementById('profile-img').src = photo;
+                document.getElementById('user-avatar').src = photo;
+                const pmodalPhoto = document.getElementById('pmodal-photo');
+                if (pmodalPhoto) pmodalPhoto.src = photo;
+            }
+            if (p.linkedin) {
+                const link = document.getElementById('user-linkedin-link');
+                link.href = p.linkedin.startsWith('http') ? p.linkedin : 'https://' + p.linkedin;
+                link.textContent = p.name || p.linkedin;
+            }
+            if (currentUser) {
+                const emailLink = document.getElementById('user-email-link');
+                if (emailLink) { emailLink.href = 'mailto:' + currentUser.email; emailLink.textContent = currentUser.email; }
+            }
+        }
+
+        async function loadUserProfile() {
+            if (!currentUser) return;
+
+            // Step 1: Apply localStorage instantly (photo always lives here)
+            const local = getLocalProfile();
+            if (Object.keys(local).length) applyProfileToPage(local);
+
+            // Step 2: Sync text + cloud photo URL from Firestore in background
+            try {
+                const doc = await db.collection('users').doc(currentUser.uid).get();
+                if (doc.exists && doc.data().profile) {
+                    const remote = doc.data().profile;
+                    // If Firestore has a Cloudinary URL, save it locally for future offline use
+                    if (remote.photoURL && remote.photoURL.startsWith('https://')) {
+                        localStorage.setItem('profile_photo_' + currentUser.uid, remote.photoURL);
+                    }
+                    const photo = localStorage.getItem('profile_photo_' + currentUser.uid);
+                    const merged = { ...remote, image: photo || local.image };
+                    // Update text fields in localStorage
+                    const { name='', phone='', linkedin='', address='' } = remote;
+                    localStorage.setItem('profile_' + currentUser.uid, JSON.stringify({ name, phone, linkedin, address }));
+                    applyProfileToPage(merged);
+                }
+            } catch(e) {}
+
+            // Always set email from Firebase Auth
+            const emailLink = document.getElementById('user-email-link');
+            if (emailLink) { emailLink.href = 'mailto:' + currentUser.email; emailLink.textContent = currentUser.email; }
         }
 
         async function loadApplicationsFromFirebase() {
+            if (!currentUser) return;
             try {
-                const snapshot = await db.collection("applications").get();
-                if (snapshot.empty) return; // keep local data already rendered
-
+                const snapshot = await userAppsRef().get();
+                if (snapshot.empty) { renderApplications(); updateDeadlineSlider(); return; }
                 const firebaseApps = [];
                 snapshot.forEach(doc => firebaseApps.push({ id: doc.id, ...doc.data() }));
-
                 applications = firebaseApps;
-                saveApplications(); // sync back to localStorage
-                renderApplications(); // re-render with fresh Firebase data
+                saveApplications();
+                renderApplications();
+                updateDeadlineSlider();
             } catch (err) {
-                console.warn("Firebase load failed, using cached local data:", err);
+                console.warn("Firebase load failed:", err);
             }
         }
-
-        window.onload = () => {
-            loadProfile();
-
-            // ⚡ Render instantly from localStorage (zero wait)
-            renderApplications();
-
-            // 🔥 Then sync with Firebase in the background (non-blocking)
-            loadApplicationsFromFirebase().then(() => updateDeadlineSlider());
-
-            // Show deadline slider from local data immediately
-            updateDeadlineSlider();
-        };
 
 
         // ===== DEADLINE SLIDER BANNER =====
@@ -1364,15 +1867,6 @@ function renderListRow(app) {
 
 
 
-
-    <!-- Upload Progress Toast -->
-    <div id="upload-toast" class="hidden">
-        <i class="fas fa-cloud-upload-alt text-indigo-400"></i>
-        <span id="upload-toast-msg">Uploading...</span>
-        <div id="upload-progress-bar-wrap">
-            <div id="upload-progress-bar"></div>
-        </div>
-    </div>
 
 </body>
 </html>
