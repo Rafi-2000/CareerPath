@@ -792,6 +792,7 @@ async function handleFile(input, type) {
                 'square': 'squaregroup.com.bd',
                 'beximco': 'beximco.com',
                 'bashundhara': 'bashundharagroup.com',
+                'Eastern Bank': 'ebl.com.bd'
             };
             const domain = overrides[name] || (name.replace(/[^a-z0-9]/g, '') + '.com');
             return 'https://www.google.com/s2/favicons?domain=' + domain + '&sz=64';
