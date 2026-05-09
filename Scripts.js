@@ -795,7 +795,7 @@ async function handleFile(input, type) {
                 'trust bank': 'trustbank.com.bd',
                 'uttara bank': 'uttarabank-bd.com',
                 'ific bank': 'ificbankbd.com',
-                'bank asia': 'bankasia.com.bd',
+                'bank asia': 'bankasia-bd.com',
                 'mutual trust bank': 'mutualtrustbank.com',
                 'national bank': 'nblbd.com',
                 'exim bank': 'eximbankbd.com',
