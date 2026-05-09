@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CareerPath | Job Application Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -13,17 +12,41 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
-        body { font-family: 'Plus Jakarta Sans', sans-serif; }
-        .modal-backdrop { background-color: rgba(15, 23, 42, 0.5); backdrop-filter: blur(4px); }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
-        .animate-in { animation: fadeIn 0.2s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
-        
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .modal-backdrop {
+            background-color: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(4px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+        .animate-in {
+            animation: fadeIn 0.2s ease-out;
+        }
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
 
         /* ===== Deadline Alert Slider ===== */
         #deadline-slider-wrap {
@@ -33,7 +56,7 @@
             overflow: hidden;
             max-height: 0;
             opacity: 0;
-            transition: max-height 0.55s cubic-bezier(0.4,0,0.2,1), opacity 0.4s ease, margin 0.4s ease;
+            transition: max-height 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease, margin 0.4s ease;
         }
         #deadline-slider-wrap.show {
             max-height: 120px;
@@ -52,170 +75,476 @@
             position: relative;
         }
         #deadline-slider-inner .bell-icon {
-            width: 38px; height: 38px;
+            width: 38px;
+            height: 38px;
             border-radius: 50%;
             background: #fee2e2;
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             flex-shrink: 0;
             animation: bellRing 1.2s ease-in-out infinite;
         }
         @keyframes bellRing {
-            0%, 100% { transform: rotate(0deg); }
-            15%       { transform: rotate(12deg); }
-            30%       { transform: rotate(-10deg); }
-            45%       { transform: rotate(8deg); }
-            60%       { transform: rotate(-6deg); }
-            75%       { transform: rotate(3deg); }
+            0%,
+            100% {
+                transform: rotate(0deg);
+            }
+            15% {
+                transform: rotate(12deg);
+            }
+            30% {
+                transform: rotate(-10deg);
+            }
+            45% {
+                transform: rotate(8deg);
+            }
+            60% {
+                transform: rotate(-6deg);
+            }
+            75% {
+                transform: rotate(3deg);
+            }
         }
         #deadline-slider-close {
-            position: absolute; top: 10px; right: 12px;
-            background: none; border: none; cursor: pointer;
-            color: #f87171; font-size: 15px; line-height: 1;
-            opacity: 0.7; transition: opacity 0.2s;
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #f87171;
+            font-size: 15px;
+            line-height: 1;
+            opacity: 0.7;
+            transition: opacity 0.2s;
         }
-        #deadline-slider-close:hover { opacity: 1; }
-        #deadline-slider-text { font-size: 13.5px; color: #991b1b; line-height: 1.55; }
-        #deadline-slider-text strong { color: #7f1d1d; }
-        #deadline-slider-text .job-list { font-weight: 700; color: #b91c1c; }
-
+        #deadline-slider-close:hover {
+            opacity: 1;
+        }
+        #deadline-slider-text {
+            font-size: 13.5px;
+            color: #991b1b;
+            line-height: 1.55;
+        }
+        #deadline-slider-text strong {
+            color: #7f1d1d;
+        }
+        #deadline-slider-text .job-list {
+            font-weight: 700;
+            color: #b91c1c;
+        }
 
         /* ===== Sort Dropdown ===== */
-        .sort-wrapper { position: relative; display: inline-block; }
-        .sort-btn {
-            display: flex; align-items: center; gap: 7px;
-            background: white; border: 1px solid #e2e8f0;
-            border-radius: 10px; padding: 7px 13px;
-            font-size: 13.5px; font-weight: 600; color: #475569;
-            cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-            transition: border-color 0.15s, box-shadow 0.15s;
-            white-space: nowrap; user-select: none;
+        .sort-wrapper {
+            position: relative;
+            display: inline-block;
         }
-        .sort-btn:hover { border-color: #6366f1; color: #6366f1; }
-        .sort-btn.active { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
-        .sort-btn i.chevron { font-size: 10px; transition: transform 0.2s; }
-        .sort-btn.open i.chevron { transform: rotate(180deg); }
+        .sort-btn {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 7px 13px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+            transition: border-color 0.15s, box-shadow 0.15s;
+            white-space: nowrap;
+            user-select: none;
+        }
+        .sort-btn:hover {
+            border-color: #6366f1;
+            color: #6366f1;
+        }
+        .sort-btn.active {
+            border-color: #6366f1;
+            color: #6366f1;
+            background: #eef2ff;
+        }
+        .sort-btn i.chevron {
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+        .sort-btn.open i.chevron {
+            transform: rotate(180deg);
+        }
         .sort-menu {
-            position: absolute; right: 0; top: calc(100% + 6px);
-            background: white; border: 1px solid #e2e8f0;
-            border-radius: 12px; padding: 5px;
-            min-width: 210px; z-index: 200;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.10);
-            opacity: 0; transform: translateY(-6px) scale(0.97);
+            position: absolute;
+            right: 0;
+            top: calc(100% + 6px);
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 5px;
+            min-width: 210px;
+            z-index: 200;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.10);
+            opacity: 0;
+            transform: translateY(-6px) scale(0.97);
             pointer-events: none;
             transition: opacity 0.15s ease, transform 0.15s ease;
         }
         .sort-menu.open {
-            opacity: 1; transform: translateY(0) scale(1);
+            opacity: 1;
+            transform: translateY(0) scale(1);
             pointer-events: all;
         }
         .sort-option {
-            display: flex; align-items: center; gap: 9px;
-            padding: 8px 12px; border-radius: 8px;
-            font-size: 13px; font-weight: 500; color: #475569;
-            cursor: pointer; transition: background 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 500;
+            color: #475569;
+            cursor: pointer;
+            transition: background 0.1s;
         }
-        .sort-option:hover { background: #f1f5f9; color: #1e293b; }
-        .sort-option.selected { background: #eef2ff; color: #6366f1; font-weight: 700; }
-        .sort-option i { width: 16px; text-align: center; font-size: 12px; color: #94a3b8; }
-        .sort-option.selected i { color: #6366f1; }
-        .sort-divider { height: 1px; background: #f1f5f9; margin: 4px 0; }
+        .sort-option:hover {
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+        .sort-option.selected {
+            background: #eef2ff;
+            color: #6366f1;
+            font-weight: 700;
+        }
+        .sort-option i {
+            width: 16px;
+            text-align: center;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        .sort-option.selected i {
+            color: #6366f1;
+        }
+        .sort-divider {
+            height: 1px;
+            background: #f1f5f9;
+            margin: 4px 0;
+        }
+
+        /* ===== Pagination ===== */
+        .page-nav-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 13px;
+            font-weight: 600;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.15s;
+            user-select: none;
+        }
+        .page-nav-btn:hover:not(:disabled):not(.active) {
+            border-color: #6366f1;
+            color: #6366f1;
+            background: #eef2ff;
+        }
+        .page-nav-btn.active {
+            background: #6366f1;
+            color: white;
+            border-color: #6366f1;
+            cursor: default;
+        }
+        .page-nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .page-nav-btn.ellipsis {
+            border: none;
+            background: transparent;
+            cursor: default;
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .page-nav-btn.ellipsis:hover {
+            background: transparent;
+            color: #94a3b8;
+        }
+        .pagination-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 16px;
+            margin-top: 16px;
+            border-top: 1px solid #f1f5f9;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+        .pagination-info {
+            font-size: 13px;
+            color: #64748b;
+            white-space: nowrap;
+        }
+        .pagination-info span {
+            font-weight: 700;
+            color: #334155;
+        }
+        .pagination-buttons {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-wrap: wrap;
+        }
 
         /* ===== Auth Modal ===== */
         #auth-overlay {
-            position: fixed; inset: 0; z-index: 9999;
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
             background: linear-gradient(135deg, #eef2ff 0%, #f0fdf4 100%);
-            display: flex; align-items: center; justify-content: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             padding: 16px;
         }
-        #auth-overlay.hidden { display: none; }
+        #auth-overlay.hidden {
+            display: none;
+        }
         .auth-card {
-            background: white; border-radius: 24px;
-            box-shadow: 0 20px 60px rgba(99,102,241,0.15);
-            padding: 40px 36px; width: 100%; max-width: 420px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.15);
+            padding: 40px 36px;
+            width: 100%;
+            max-width: 420px;
             border: 1px solid #e2e8f0;
         }
-        .auth-tab { cursor: pointer; padding: 8px 20px; border-radius: 8px; font-weight: 700; font-size: 14px; transition: all 0.15s; }
-        .auth-tab.active { background: #6366f1; color: white; }
-        .auth-tab:not(.active) { color: #94a3b8; }
-        .auth-input { width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; outline: none; transition: border-color 0.15s; box-sizing: border-box; }
-        .auth-input:focus { border-color: #6366f1; }
-        .auth-btn-primary { width: 100%; padding: 11px; background: #6366f1; color: white; font-weight: 700; border-radius: 10px; border: none; cursor: pointer; font-size: 15px; transition: background 0.15s; }
-        .auth-btn-primary:hover { background: #4f46e5; }
-        .auth-btn-google { width: 100%; padding: 10px; background: white; color: #1e293b; font-weight: 600; border-radius: 10px; border: 1.5px solid #e2e8f0; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 10px; transition: border-color 0.15s, box-shadow 0.15s; }
-        .auth-btn-google:hover { border-color: #6366f1; box-shadow: 0 2px 8px rgba(99,102,241,0.12); }
-        #auth-error { color: #ef4444; font-size: 13px; min-height: 18px; text-align: center; }
+        .auth-tab {
+            cursor: pointer;
+            padding: 8px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            transition: all 0.15s;
+        }
+        .auth-tab.active {
+            background: #6366f1;
+            color: white;
+        }
+        .auth-tab:not(.active) {
+            color: #94a3b8;
+        }
+        .auth-input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.15s;
+            box-sizing: border-box;
+        }
+        .auth-input:focus {
+            border-color: #6366f1;
+        }
+        .auth-btn-primary {
+            width: 100%;
+            padding: 11px;
+            background: #6366f1;
+            color: white;
+            font-weight: 700;
+            border-radius: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background 0.15s;
+        }
+        .auth-btn-primary:hover {
+            background: #4f46e5;
+        }
+        .auth-btn-google {
+            width: 100%;
+            padding: 10px;
+            background: white;
+            color: #1e293b;
+            font-weight: 600;
+            border-radius: 10px;
+            border: 1.5px solid #e2e8f0;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: border-color 0.15s, box-shadow 0.15s;
+        }
+        .auth-btn-google:hover {
+            border-color: #6366f1;
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.12);
+        }
+        #auth-error {
+            color: #ef4444;
+            font-size: 13px;
+            min-height: 18px;
+            text-align: center;
+        }
 
         /* ===== User Avatar Circle ===== */
         #user-avatar-circle {
-            width: 38px; height: 38px; border-radius: 50%;
-            overflow: hidden; cursor: pointer;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            overflow: hidden;
+            cursor: pointer;
             border: 2px solid #e2e8f0;
             transition: border-color 0.15s, box-shadow 0.15s;
             flex-shrink: 0;
         }
-        #user-avatar-circle:hover { border-color: #6366f1; box-shadow: 0 0 0 3px #eef2ff; }
-        #user-avatar-circle img { width: 100%; height: 100%; object-fit: cover; }
+        #user-avatar-circle:hover {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px #eef2ff;
+        }
+        #user-avatar-circle img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
         /* ===== Hamburger Menu ===== */
-        #hamburger-wrapper { position: relative; }
+        #hamburger-wrapper {
+            position: relative;
+        }
         #hamburger-btn {
-            width: 38px; height: 38px; border-radius: 10px;
-            border: 1px solid #e2e8f0; background: white;
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.15s;
+            width: 38px;
+            height: 38px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
             color: #475569;
         }
-        #hamburger-btn:hover { border-color: #6366f1; color: #6366f1; background: #eef2ff; }
+        #hamburger-btn:hover {
+            border-color: #6366f1;
+            color: #6366f1;
+            background: #eef2ff;
+        }
         .hamburger-menu {
-            position: absolute; right: 0; top: calc(100% + 8px);
-            background: white; border: 1px solid #e2e8f0;
-            border-radius: 14px; padding: 6px;
-            min-width: 200px; z-index: 500;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-            opacity: 0; transform: translateY(-8px) scale(0.97);
+            position: absolute;
+            right: 0;
+            top: calc(100% + 8px);
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 6px;
+            min-width: 200px;
+            z-index: 500;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+            opacity: 0;
+            transform: translateY(-8px) scale(0.97);
             pointer-events: none;
             transition: opacity 0.15s ease, transform 0.15s ease;
         }
-        .hamburger-menu.open { opacity: 1; transform: translateY(0) scale(1); pointer-events: all; }
-        .hmenu-item {
-            display: flex; align-items: center; justify-content: space-between;
-            gap: 10px; padding: 9px 12px; border-radius: 9px;
-            font-size: 13.5px; font-weight: 600; color: #334155;
-            cursor: pointer; transition: background 0.1s;
+        .hamburger-menu.open {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: all;
         }
-        .hmenu-item:hover { background: #f1f5f9; }
-        .hmenu-item i.icon { width: 18px; text-align: center; color: #6366f1; font-size: 13px; }
-        .hmenu-item i.arrow { font-size: 10px; color: #94a3b8; }
-        .hmenu-divider { height: 1px; background: #f1f5f9; margin: 4px 0; }
-        .hmenu-item.danger { color: #ef4444; }
-        .hmenu-item.danger i.icon { color: #ef4444; }
-        .hmenu-item.danger:hover { background: #fef2f2; }
+        .hmenu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 9px 12px;
+            border-radius: 9px;
+            font-size: 13.5px;
+            font-weight: 600;
+            color: #334155;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .hmenu-item:hover {
+            background: #f1f5f9;
+        }
+        .hmenu-item i.icon {
+            width: 18px;
+            text-align: center;
+            color: #6366f1;
+            font-size: 13px;
+        }
+        .hmenu-item i.arrow {
+            font-size: 10px;
+            color: #94a3b8;
+        }
+        .hmenu-divider {
+            height: 1px;
+            background: #f1f5f9;
+            margin: 4px 0;
+        }
+        .hmenu-item.danger {
+            color: #ef4444;
+        }
+        .hmenu-item.danger i.icon {
+            color: #ef4444;
+        }
+        .hmenu-item.danger:hover {
+            background: #fef2f2;
+        }
 
         /* Sub-menu */
         .hmenu-sub {
-            position: absolute; right: calc(100% + 8px); top: 0;
-            background: white; border: 1px solid #e2e8f0;
-            border-radius: 14px; padding: 6px;
-            min-width: 180px; z-index: 501;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
-            opacity: 0; transform: translateX(6px) scale(0.97);
+            position: absolute;
+            right: calc(100% + 8px);
+            top: 0;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 6px;
+            min-width: 180px;
+            z-index: 501;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+            opacity: 0;
+            transform: translateX(6px) scale(0.97);
             pointer-events: none;
             transition: opacity 0.15s ease, transform 0.15s ease;
         }
-        .hmenu-sub.open { opacity: 1; transform: translateX(0) scale(1); pointer-events: all; }
-        .hmenu-sub-wrapper { position: relative; }
+        .hmenu-sub.open {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+            pointer-events: all;
+        }
+        .hmenu-sub-wrapper {
+            position: relative;
+        }
 
         /* ===== Profile Modal ===== */
         #profile-modal-overlay {
-            position: fixed; inset: 0; z-index: 8000;
-            background: rgba(15,23,42,0.55); backdrop-filter: blur(4px);
-            display: flex; align-items: center; justify-content: center; padding: 16px;
+            position: fixed;
+            inset: 0;
+            z-index: 8000;
+            background: rgba(15, 23, 42, 0.55);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
         }
-        #profile-modal-overlay.hidden { display: none; }
+        #profile-modal-overlay.hidden {
+            display: none;
+        }
         .profile-modal-card {
-            background: white; border-radius: 22px;
-            box-shadow: 0 20px 60px rgba(99,102,241,0.18);
-            padding: 0; width: 100%; max-width: 500px;
+            background: white;
+            border-radius: 22px;
+            box-shadow: 0 20px 60px rgba(99, 102, 241, 0.18);
+            padding: 0;
+            width: 100%;
+            max-width: 500px;
             overflow: hidden;
         }
         .pmodal-header {
@@ -223,130 +552,196 @@
             padding: 28px 32px 24px;
             color: white;
         }
-        .pmodal-body { padding: 24px 32px 28px; }
+        .pmodal-body {
+            padding: 24px 32px 28px;
+        }
         .pmodal-input {
-            width: 100%; padding: 10px 14px; border: 1.5px solid #e2e8f0;
-            border-radius: 10px; font-size: 14px; outline: none;
-            transition: border-color 0.15s; box-sizing: border-box;
+            width: 100%;
+            padding: 10px 14px;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.15s;
+            box-sizing: border-box;
             font-family: inherit;
         }
-        .pmodal-input:focus { border-color: #6366f1; }
-        .pmodal-input:disabled { background: #f8fafc; color: #94a3b8; cursor: not-allowed; }
-        .pmodal-label { display: block; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+        .pmodal-input:focus {
+            border-color: #6366f1;
+        }
+        .pmodal-input:disabled {
+            background: #f8fafc;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+        .pmodal-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 5px;
+        }
 
         /* Profile photo in modal */
         .pmodal-photo-wrap {
-            width: 80px; height: 80px; border-radius: 50%;
-            overflow: hidden; border: 3px solid rgba(255,255,255,0.5);
-            cursor: pointer; position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            position: relative;
         }
-        .pmodal-photo-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        .pmodal-photo-wrap img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
         .pmodal-photo-overlay {
-            position: absolute; inset: 0; background: rgba(0,0,0,0.45);
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; transition: 0.2s;
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: 0.2s;
         }
-        .pmodal-photo-wrap:hover .pmodal-photo-overlay { opacity: 1; }
+        .pmodal-photo-wrap:hover .pmodal-photo-overlay {
+            opacity: 1;
+        }
 
+        /* ===== Archive card ===== */
+        .archive-card {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            transition: box-shadow 0.15s;
+        }
+        .archive-card:hover {
+            box-shadow: 0 4px 16px rgba(245, 158, 11, 0.15);
+        }
 
-        .urgency-safe { border-left: 4px solid #10b981 !important; background-color: #f0fdf4; }
-        .urgency-warning { border-left: 4px solid #f59e0b !important; background-color: #fffbeb; }
-        .urgency-danger { border-left: 4px solid #ef4444 !important; background-color: #fef2f2; }
+        .urgency-safe {
+            border-left: 4px solid #10b981 !important;
+            background-color: #f0fdf4;
+        }
+        .urgency-warning {
+            border-left: 4px solid #f59e0b !important;
+            background-color: #fffbeb;
+        }
+        .urgency-danger {
+            border-left: 4px solid #ef4444 !important;
+            background-color: #fef2f2;
+        }
 
         /* ===== Profile Card ===== */
-.profile-card {
-    max-width: 1220px;
-    margin: 20px auto 0;
-    padding: 24px;
-    background: white;
-    border: 1px solid #e2e8f0;
-    border-radius: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 20px;
-}
+        .profile-card {
+            max-width: 1220px;
+            margin: 20px auto 0;
+            padding: 24px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
 
-@media (min-width: 768px) {
-    .profile-card {
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-    }
-}
+        @media (min-width: 768px) {
+            .profile-card {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
 
-/* ===== Profile Details ===== */
-.profile-details {
-    width: 100%;
-}
+        /* ===== Profile Details ===== */
+        .profile-details {
+            width: 100%;
+        }
 
-/* ===== Contact Items ===== */
-.contact-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: #475569;
-}
+        /* ===== Contact Items ===== */
+        .contact-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #475569;
+        }
 
-/* Links */
-.link-text {
-    color: #2563eb;
-    text-decoration: none;
-}
+        /* Links */
+        .link-text {
+            color: #2563eb;
+            text-decoration: none;
+        }
+        .link-text:hover {
+            text-decoration: underline;
+        }
 
-.link-text:hover {
-    text-decoration: underline;
-}
+        /* Static text */
+        .static-text {
+            color: #475569;
+        }
 
-/* Static text */
-.static-text {
-    color: #475569;
-}
+        /* ===== Profile Photo ===== */
+        .profile-photo-container {
+            width: 110px;
+            height: 110px;
+            border-radius: 16px;
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+            border: 1px solid #e2e8f0;
+        }
+        .profile-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
 
-/* ===== Profile Photo ===== */
-.profile-photo-container {
-    width: 110px;
-    height: 110px;
-    border-radius: 16px;
-    overflow: hidden;
-    position: relative;
-    cursor: pointer;
-    border: 1px solid #e2e8f0;
-}
+        /* Hover Overlay */
+        .photo-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: 0.3s ease;
+        }
+        .profile-photo-container:hover .photo-overlay {
+            opacity: 1;
+        }
 
-.profile-photo {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* Hover Overlay */
-.photo-overlay {
-    position: absolute;
-    inset: 0;
-    background: rgba(15, 23, 42, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: 0.3s ease;
-}
-
-.profile-photo-container:hover .photo-overlay {
-    opacity: 1;
-}
-
-/* ===== Responsive Fix ===== */
-@media (max-width: 640px) {
-    .profile-card {
-        padding: 16px;
-    }
-
-    .profile-photo-container {
-        width: 90px;
-        height: 90px;
-    }
-}
+        /* ===== Responsive Fix ===== */
+        @media (max-width: 640px) {
+            .profile-card {
+                padding: 16px;
+            }
+            .profile-photo-container {
+                width: 90px;
+                height: 90px;
+            }
+            .pagination-wrapper {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .page-nav-btn {
+                width: 32px;
+                height: 32px;
+                font-size: 12px;
+                border-radius: 7px;
+            }
+        }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
@@ -354,7 +749,6 @@
     <!-- ===== AUTH OVERLAY ===== -->
     <div id="auth-overlay" class="hidden">
         <div class="auth-card">
-            <!-- Logo -->
             <div class="flex items-center gap-2 mb-6">
                 <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-lg shadow-indigo-200">
                     <i class="fas fa-briefcase"></i>
@@ -362,14 +756,10 @@
                 <h1 class="text-xl font-bold tracking-tight text-slate-800">CareerPath</h1>
             </div>
             <p class="text-slate-500 text-sm mb-6">Sign in to track your job applications privately and securely.</p>
-
-            <!-- Tabs -->
             <div class="flex gap-2 bg-slate-100 p-1 rounded-10 mb-6 w-fit rounded-xl">
-                <div class="auth-tab active" id="tab-login" onclick="switchTab('login')">Sign In</div>
-                <div class="auth-tab" id="tab-register" onclick="switchTab('register')">Register</div>
+                <div class="auth-tab active" id="tab-login" onclick="switchAuthTab('login')">Sign In</div>
+                <div class="auth-tab" id="tab-register" onclick="switchAuthTab('register')">Register</div>
             </div>
-
-            <!-- Login Form -->
             <div id="form-login">
                 <div class="flex flex-col gap-3 mb-4">
                     <input id="login-email" class="auth-input" type="email" placeholder="Email address" />
@@ -377,8 +767,6 @@
                 </div>
                 <button class="auth-btn-primary mb-3" onclick="loginWithEmail()">Sign In</button>
             </div>
-
-            <!-- Register Form -->
             <div id="form-register" class="hidden">
                 <div class="flex flex-col gap-3 mb-4">
                     <input id="reg-email" class="auth-input" type="email" placeholder="Email address" />
@@ -387,17 +775,12 @@
                 </div>
                 <button class="auth-btn-primary mb-3" onclick="registerWithEmail()">Create Account</button>
             </div>
-
             <p id="auth-error" class="mb-3"></p>
-
-            <!-- Divider -->
             <div class="flex items-center gap-3 mb-3">
                 <hr class="flex-1 border-slate-200">
                 <span class="text-xs text-slate-400 font-medium">OR</span>
                 <hr class="flex-1 border-slate-200">
             </div>
-
-            <!-- Google -->
             <button class="auth-btn-google" onclick="loginWithGoogle()">
                 <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
                 Continue with Google
@@ -415,36 +798,28 @@
                 <h1 class="text-xl font-bold tracking-tight text-slate-800">CareerPath</h1>
             </div>
             <div class="flex items-center gap-3">
-                <!-- Avatar Circle -->
                 <div id="user-avatar-circle" onclick="openProfileModal()" title="Edit Profile">
                     <img id="user-avatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=user" alt="avatar">
                 </div>
-
-                <!-- Add Application -->
                 <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium flex items-center gap-2 transition-all shadow-sm active:scale-95">
                     <i class="fas fa-plus"></i>
                     <span class="hidden sm:inline">Add Application</span>
                 </button>
-
-                <!-- Hamburger Menu -->
                 <div id="hamburger-wrapper">
                     <button id="hamburger-btn" onclick="toggleHamburger()" title="Menu">
                         <i class="fas fa-bars"></i>
                     </button>
                     <div class="hamburger-menu" id="hamburger-menu">
-                        <!-- Profile -->
                         <div class="hmenu-item" onclick="openProfileModal(); closeHamburger()">
                             <span><i class="icon fas fa-user-circle"></i> Profile</span>
                         </div>
                         <div class="hmenu-divider"></div>
-                        <!-- Export/Import submenu -->
                         <div class="hmenu-sub-wrapper" id="ei-wrapper">
                             <div class="hmenu-item" onclick="toggleEIMenu(event)">
                                 <span><i class="icon fas fa-exchange-alt"></i> Export / Import</span>
                                 <i class="arrow fas fa-chevron-left"></i>
                             </div>
                             <div class="hmenu-sub" id="ei-menu">
-                                <!-- Export sub -->
                                 <div class="hmenu-sub-wrapper" id="export-wrapper">
                                     <div class="hmenu-item" onclick="toggleExportMenu(event)">
                                         <span><i class="icon fas fa-download"></i> Export</span>
@@ -460,14 +835,12 @@
                                     </div>
                                 </div>
                                 <div class="hmenu-divider"></div>
-                                <!-- Import -->
                                 <div class="hmenu-item" onclick="triggerImport(); closeHamburger()">
                                     <span><i class="icon fas fa-upload"></i> Import from Excel</span>
                                 </div>
                             </div>
                         </div>
                         <div class="hmenu-divider"></div>
-                        <!-- Logout -->
                         <div class="hmenu-item danger" onclick="signOut(); closeHamburger()">
                             <span><i class="icon fas fa-sign-out-alt"></i> Logout</span>
                         </div>
@@ -477,16 +850,13 @@
         </div>
     </header>
 
-
     <!-- Deadline Alert Sliding Banner -->
     <div id="deadline-slider-wrap">
         <div id="deadline-slider-inner">
             <div class="bell-icon">
                 <i class="fas fa-bell text-red-500 text-lg"></i>
             </div>
-            <div id="deadline-slider-text" class="flex-1">
-                <!-- filled by JS -->
-            </div>
+            <div id="deadline-slider-text" class="flex-1"></div>
             <button id="deadline-slider-close" onclick="closeDeadlineSlider()" title="Dismiss">
                 <i class="fas fa-times"></i>
             </button>
@@ -494,117 +864,117 @@
     </div>
 
     <!-- Personal Details Section -->
-        <div class="profile-card">
-            <div class="flex-1">
-                <div class="profile-details">
-                    <input type="text" id="user-name" class="text-3xl font-bold text-gray-900 outline-none w-full bg-transparent border-b border-transparent focus:border-blue-500 mb-2" value="Samiuzzaman ." placeholder="Your Name" oninput="saveProfile()">
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 mt-2">
-                        <div class="contact-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-900 flex-shrink-0"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
-                            <a id="user-email-link" href="mailto:samiuzzamanrafi2000@gmail.com" class="link-text">samiuzzamanrafi2000@gmail.com</a>
-                        </div>
-                        
-                        <div class="contact-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-900 flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                            <span id="user-phone-text" class="static-text">+8801633586056</span>
-                        </div>
-
-                        <div class="contact-item md:col-span-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-900 flex-shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                            <span id="user-address-text" class="static-text">115, Puraton C and B Ghat, Rehaichar, Sadar, Chapainawabganj</span>
-                        </div>
-
-                        <div class="contact-item">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-900 flex-shrink-0"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-                            <a id="user-linkedin-link" href="https://www.linkedin.com/in/samiuzzamanrafi/" target="_blank" class="link-text font-medium">Samiuzzaman Rafi</a>
-                        </div>
+    <div class="profile-card">
+        <div class="flex-1">
+            <div class="profile-details">
+                <input type="text" id="user-name" class="text-3xl font-bold text-gray-900 outline-none w-full bg-transparent border-b border-transparent focus:border-blue-500 mb-2" value="Samiuzzaman ." placeholder="Your Name" oninput="saveProfile()">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-1 mt-2">
+                    <div class="contact-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-900 flex-shrink-0"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+                        <a id="user-email-link" href="mailto:samiuzzamanrafi2000@gmail.com" class="link-text">samiuzzamanrafi2000@gmail.com</a>
                     </div>
-                </div>
-            </div>
-            <div class="flex-shrink-0">
-                <input type="file" id="profile-upload" class="hidden" accept="image/*" onchange="handleProfilePhoto(this)">
-                <div class="profile-photo-container shadow-sm group" onclick="document.getElementById('profile-upload').click()">
-                    <img id="profile-img" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Samiuzzaman" alt="Profile Photo" class="profile-photo">
-                    <div class="photo-overlay">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                    <div class="contact-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-900 flex-shrink-0"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                        <span id="user-phone-text" class="static-text">+8801633586056</span>
+                    </div>
+                    <div class="contact-item md:col-span-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-900 flex-shrink-0"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                        <span id="user-address-text" class="static-text">115, Puraton C and B Ghat, Rehaichar, Sadar, Chapainawabganj</span>
+                    </div>
+                    <div class="contact-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-gray-900 flex-shrink-0"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+                        <a id="user-linkedin-link" href="https://www.linkedin.com/in/samiuzzamanrafi/" target="_blank" class="link-text font-medium">Samiuzzaman Rafi</a>
                     </div>
                 </div>
             </div>
         </div>
+        <div class="flex-shrink-0">
+            <input type="file" id="profile-upload" class="hidden" accept="image/*" onchange="handleProfilePhoto(this)">
+            <div class="profile-photo-container shadow-sm group" onclick="document.getElementById('profile-upload').click()">
+                <img id="profile-img" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Samiuzzaman" alt="Profile Photo" class="profile-photo">
+                <div class="photo-overlay">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Stats Row -->
-        <div id="stats-container" class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
-            <!-- Stats populated by JS -->
-        </div>
+        <div id="stats-container" class="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8"></div>
 
-        <!-- Controls Row -->
+        <!-- Controls Row with integrated tab switcher -->
         <div class="flex flex-col md:flex-row gap-4 mb-6 items-center justify-between">
-            <div class="relative w-full md:w-96">
-                <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input 
-                    type="text" 
-                    id="search-input"
-                    placeholder="Search companies or roles..."
-                    class="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm"
-                    oninput="renderApplications()"
-                >
+            <div class="flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-sm flex-shrink-0" style="height:40px;box-sizing:border-box;">
+                <button id="tab-active-btn" onclick="switchMainTab('active')" style="height:30px;" class="flex items-center gap-2 px-4 rounded-lg text-sm font-bold transition-all duration-200 bg-indigo-600 text-white shadow">
+                    <i class="fas fa-briefcase text-xs"></i> Active
+                </button>
+                <button id="tab-archive-btn" onclick="switchMainTab('archive')" style="height:30px;" class="flex items-center gap-2 px-4 rounded-lg text-sm font-bold transition-all duration-200 text-slate-500 hover:bg-slate-50">
+                    <i class="fas fa-archive text-xs"></i> Archived
+                    <span id="archive-badge" class="hidden text-xs bg-amber-100 text-amber-700 font-bold px-1.5 py-0.5 rounded-full"></span>
+                </button>
             </div>
-            
             <div class="flex items-center gap-3 w-full md:w-auto">
-                <div class="flex bg-white border border-slate-200 rounded-lg p-1 shadow-sm">
+                <div class="relative flex-1 md:w-72">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="search-input" placeholder="Search companies or roles..." class="w-full pl-10 pr-4 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all shadow-sm" style="height:40px;box-sizing:border-box;padding-top:0;padding-bottom:0;" oninput="resetPageAndRender()">
+                </div>
+                <div class="flex bg-white border border-slate-200 rounded-lg p-1 shadow-sm" style="height:40px;box-sizing:border-box;align-items:center;">
                     <button onclick="setView('grid')" id="btn-grid" class="p-1.5 rounded bg-slate-100 text-indigo-600"><i class="fas fa-th-large"></i></button>
                     <button onclick="setView('list')" id="btn-list" class="p-1.5 rounded text-slate-400"><i class="fas fa-list"></i></button>
                 </div>
-
-                <select id="status-filter" onchange="renderApplications()" class="bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm cursor-pointer">
+                <select id="status-filter" onchange="resetPageAndRender()" class="bg-white border border-slate-200 rounded-lg px-3 text-sm font-medium focus:ring-2 focus:ring-indigo-500 outline-none shadow-sm cursor-pointer" style="height:40px;box-sizing:border-box;">
                     <option value="all">All Statuses</option>
                     <option value="wishlist">Wishlist</option>
                     <option value="applied">Applied</option>
-                    <option value="preliminary">Preliminary</option>
+                    <option value="preliminary">Preliminary (Pass)</option>
                     <option value="written">Written</option>
                     <option value="interview">Interview</option>
                     <option value="offer">Offer</option>
                     <option value="rejected">Rejected</option>
                 </select>
-
-                <!-- Sort Dropdown -->
                 <div class="sort-wrapper" id="sort-wrapper">
                     <button class="sort-btn" id="sort-btn" onclick="toggleSortMenu()">
                         <i class="fas fa-sort-amount-down" style="font-size:13px;"></i>
-                        <span id="sort-label">Newest</span>
+                        <span id="sort-label">Deadline ↑</span>
                         <i class="fas fa-chevron-down chevron"></i>
                     </button>
                     <div class="sort-menu" id="sort-menu">
-                        <div class="sort-option selected" data-sort="newest" onclick="setSort('newest', 'Newest', this)">
-                            <i class="fas fa-clock"></i> Newest first
-                        </div>
-                        <div class="sort-option" data-sort="oldest" onclick="setSort('oldest', 'Oldest', this)">
-                            <i class="fas fa-history"></i> Oldest first
-                        </div>
+                        <div class="sort-option" data-sort="newest" onclick="setSort('newest','Newest',this)"><i class="fas fa-clock"></i> Newest first</div>
+                        <div class="sort-option" data-sort="oldest" onclick="setSort('oldest','Oldest',this)"><i class="fas fa-history"></i> Oldest first</div>
                         <div class="sort-divider"></div>
-                        <div class="sort-option" data-sort="salary-high" onclick="setSort('salary-high', 'Salary: High', this)">
-                            <i class="fas fa-arrow-up"></i> Salary: High → Low
-                        </div>
-                        <div class="sort-option" data-sort="salary-low" onclick="setSort('salary-low', 'Salary: Low', this)">
-                            <i class="fas fa-arrow-down"></i> Salary: Low → High
-                        </div>
+                        <div class="sort-option" data-sort="salary-high" onclick="setSort('salary-high','Salary: High',this)"><i class="fas fa-arrow-up"></i> Salary: High → Low</div>
+                        <div class="sort-option" data-sort="salary-low" onclick="setSort('salary-low','Salary: Low',this)"><i class="fas fa-arrow-down"></i> Salary: Low → High</div>
                         <div class="sort-divider"></div>
-                        <div class="sort-option" data-sort="deadline-soon" onclick="setSort('deadline-soon', 'Deadline ↑', this)">
-                            <i class="fas fa-calendar-times"></i> Deadline: Soonest
-                        </div>
-                        <div class="sort-option" data-sort="deadline-late" onclick="setSort('deadline-late', 'Deadline ↓', this)">
-                            <i class="fas fa-calendar-plus"></i> Deadline: Latest
-                        </div>
+                        <div class="sort-option selected" data-sort="deadline-soon" onclick="setSort('deadline-soon','Deadline ↑',this)"><i class="fas fa-calendar-times"></i> Deadline: Soonest</div>
+                        <div class="sort-option" data-sort="deadline-late" onclick="setSort('deadline-late','Deadline ↓',this)"><i class="fas fa-calendar-plus"></i> Deadline: Latest</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Content Area -->
-        <div id="apps-container"></div>
+        <!-- Content Area with sliding tabs -->
+        <div style="overflow:hidden;position:relative;">
+            <div id="tab-slider" style="display:flex;transition:transform 0.35s cubic-bezier(0.4,0,0.2,1);will-change:transform;">
+                <div id="tab-active-pane" style="min-width:100%;width:100%;">
+                    <div id="apps-container"></div>
+                    <div id="active-pagination-container"></div>
+                </div>
+                <div id="tab-archive-pane" style="min-width:100%;width:100%;">
+                    <div id="archive-container"></div>
+                    <div id="archive-pagination-container"></div>
+                </div>
+            </div>
+        </div>
     </main>
+
+    <!-- ===== SUB FOOTER ===== -->
+    <footer class="bg-white border-t border-slate-200 py-3.5 mt-12">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-sm text-slate-500 gap-2">
+            <span>&copy; 2026 CareerPath Ltd | All rights reserved</span>
+            <span>Powered By: Samiuzzaman Rafi<span>
+        </div>
+    </footer>
 
     <!-- Modal -->
     <div id="modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 modal-backdrop overflow-y-auto">
@@ -615,7 +985,6 @@
                     <i class="fas fa-times-circle text-2xl"></i>
                 </button>
             </div>
-            
             <form id="app-form" class="p-6">
                 <input type="hidden" id="edit-id">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -651,7 +1020,7 @@
                         <select id="status" class="w-full px-4 py-2 border rounded-lg outline-none">
                             <option value="wishlist">Wishlist</option>
                             <option value="applied" selected>Applied</option>
-                            <option value="preliminary">Preliminary</option>
+                            <option value="preliminary">Preliminary (Pass)</option>
                             <option value="written">Written</option>
                             <option value="interview">Interview</option>
                             <option value="offer">Offer</option>
@@ -687,7 +1056,6 @@
                         </label>
                     </div>
                 </div>
-
                 <div class="mt-8 flex gap-3">
                     <button type="button" onclick="closeModal()" class="flex-1 px-4 py-2.5 border border-slate-200 text-slate-600 font-bold rounded-lg hover:bg-slate-50">Cancel</button>
                     <button type="submit" class="flex-1 px-4 py-2.5 bg-indigo-600 text-white font-bold rounded-lg hover:bg-indigo-700 shadow-lg">Save Application</button>
@@ -749,51 +1117,39 @@
     </div>
 
     <script>
-
-        // 🔥 Firebase Config (replace with your own)
+        // 🔥 Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyDJzBe85RSD5ZHBc5UhjBf0Cl6aUeDVmoQ",
             authDomain: "careerpath-6c04a.firebaseapp.com",
             projectId: "careerpath-6c04a",
         };
-
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
 
-        // ===================================================
-        // ☁️  FREE CLOUD STORAGE CONFIG
-        // ===================================================
-        // 1️⃣  CLOUDINARY — free image hosting (photos)
-        //     Sign up free at cloudinary.com → Settings → API Keys
-        const CLOUDINARY_CLOUD_NAME = 'dt0u0isrm';   // ← replace
-        const CLOUDINARY_UPLOAD_PRESET = 'CareerPath_Uploads'; // ← replace (unsigned preset)
+        // ☁️ Cloudinary & Supabase config
+        const CLOUDINARY_CLOUD_NAME = 'dt0u0isrm';
+        const CLOUDINARY_UPLOAD_PRESET = 'CareerPath_Uploads';
+        const SUPABASE_URL = 'https://nbnrsqwtzxqildbaxuxn.supabase.co';
+        const SUPABASE_ANON_KEY =
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ibnJzcXd0enhxaWxkYmF4dXhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwODk2MDksImV4cCI6MjA5MzY2NTYwOX0.3Dp94d-Aot2viZUAjYxalTtMNH5s9o7ZACW_jPyzQoE';
+        const SUPABASE_BUCKET = 'careerpath-files';
 
-        // 2️⃣  SUPABASE — free file hosting (PDFs / any file)
-        //     Sign up free at supabase.com → Project Settings → API
-        const SUPABASE_URL = 'https://nbnrsqwtzxqildbaxuxn.supabase.co';           // ← replace  e.g. https://xxx.supabase.co
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5ibnJzcXd0enhxaWxkYmF4dXhuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgwODk2MDksImV4cCI6MjA5MzY2NTYwOX0.3Dp94d-Aot2viZUAjYxalTtMNH5s9o7ZACW_jPyzQoE'; // ← replace
-        const SUPABASE_BUCKET = 'careerpath-files';          // create this bucket in Supabase Storage
-
-        // ── Upload photo to Cloudinary ──────────────────────
         async function uploadToCloudinary(file) {
             const fd = new FormData();
             fd.append('file', file);
             fd.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
             fd.append('folder', 'careerpath');
-            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-                method: 'POST', body: fd
-            });
+            const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, { method: 'POST',
+                body: fd });
             if (!res.ok) throw new Error('Cloudinary upload failed');
             const data = await res.json();
-            return data.secure_url; // permanent HTTPS URL
+            return data.secure_url;
         }
 
-        // ── Upload PDF/file to Supabase Storage ─────────────
         async function uploadToSupabase(file, uid) {
             const ext = file.name.split('.').pop();
-            const path = `${uid}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`;
+            const path = `${uid}/${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
             const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${SUPABASE_BUCKET}/${path}`, {
                 method: 'POST',
                 headers: {
@@ -804,18 +1160,18 @@
                 body: file
             });
             if (!res.ok) throw new Error('Supabase upload failed');
-            // Build public URL
             return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${path}`;
         }
 
         // ===== Current user =====
         let currentUser = null;
+
         function userAppsRef() {
             return db.collection('users').doc(currentUser.uid).collection('applications');
         }
 
         // ===== AUTH FUNCTIONS =====
-        function switchTab(tab) {
+        function switchAuthTab(tab) {
             document.getElementById('form-login').classList.toggle('hidden', tab !== 'login');
             document.getElementById('form-register').classList.toggle('hidden', tab !== 'register');
             document.getElementById('tab-login').classList.toggle('active', tab === 'login');
@@ -823,19 +1179,14 @@
             document.getElementById('auth-error').textContent = '';
         }
 
-        function setAuthError(msg) {
-            document.getElementById('auth-error').textContent = msg;
-        }
+        function setAuthError(msg) { document.getElementById('auth-error').textContent = msg; }
 
         async function loginWithEmail() {
             const email = document.getElementById('login-email').value.trim();
             const pass = document.getElementById('login-password').value;
             if (!email || !pass) return setAuthError('Please fill in all fields.');
-            try {
-                await auth.signInWithEmailAndPassword(email, pass);
-            } catch (e) {
-                setAuthError(e.message.replace('Firebase: ', ''));
-            }
+            try { await auth.signInWithEmailAndPassword(email, pass); } catch (e) { setAuthError(e.message.replace(
+                    'Firebase: ', '')); }
         }
 
         async function registerWithEmail() {
@@ -845,31 +1196,20 @@
             if (!email || !pass) return setAuthError('Please fill in all fields.');
             if (pass !== confirm) return setAuthError('Passwords do not match.');
             if (pass.length < 6) return setAuthError('Password must be at least 6 characters.');
-            try {
-                isNewRegistration = true;
-                await auth.createUserWithEmailAndPassword(email, pass);
-            } catch (e) {
-                isNewRegistration = false;
-                setAuthError(e.message.replace('Firebase: ', ''));
-            }
+            try { isNewRegistration = true;
+                await auth.createUserWithEmailAndPassword(email, pass); } catch (e) { isNewRegistration = false;
+                setAuthError(e.message.replace('Firebase: ', '')); }
         }
 
         async function loginWithGoogle() {
             const provider = new firebase.auth.GoogleAuthProvider();
-            try {
-                await auth.signInWithPopup(provider);
-            } catch (e) {
-                setAuthError(e.message.replace('Firebase: ', ''));
-            }
+            try { await auth.signInWithPopup(provider); } catch (e) { setAuthError(e.message.replace('Firebase: ', '')); }
         }
 
-        function signOut() {
-            if (confirm('Sign out of CareerPath?')) auth.signOut();
-        }
+        function signOut() { if (confirm('Sign out of CareerPath?')) auth.signOut(); }
 
         // ===== AUTH STATE LISTENER =====
         let isNewRegistration = false;
-        // Show a brief loading screen so the auth overlay never flashes on refresh
         document.body.insertAdjacentHTML('afterbegin', `
             <div id="app-loading" style="position:fixed;inset:0;z-index:99999;background:#eef2ff;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
                 <div style="width:44px;height:44px;border:4px solid #c7d2fe;border-top-color:#6366f1;border-radius:50%;animation:spin 0.7s linear infinite;"></div>
@@ -879,134 +1219,204 @@
         `);
 
         auth.onAuthStateChanged(async user => {
-            // Remove loading screen
             const loader = document.getElementById('app-loading');
             if (loader) loader.remove();
-
             if (user) {
                 currentUser = user;
                 document.getElementById('auth-overlay').classList.add('hidden');
-
-                // Set avatar from Google account if available
                 if (user.photoURL) document.getElementById('user-avatar').src = user.photoURL;
-
-                // Clear profile fields before loading new user's profile
                 clearProfileSection();
-
-                // Load profile then applications
                 applications = [];
-                renderApplications();
+                activeCurrentPage = 1;
+                archiveCurrentPage = 1;
+                renderCurrentTab();
                 await loadUserProfile();
                 loadApplicationsFromFirebase();
-
-                // If new registration, show profile modal
-                if (isNewRegistration) {
-                    isNewRegistration = false;
-                    setTimeout(() => openProfileModal(true), 400);
-                }
+                if (isNewRegistration) { isNewRegistration = false;
+                    setTimeout(() => openProfileModal(true), 400); }
             } else {
                 currentUser = null;
                 applications = [];
+                activeCurrentPage = 1;
+                archiveCurrentPage = 1;
                 clearProfileSection();
                 document.getElementById('auth-overlay').classList.remove('hidden');
+                renderCurrentTab();
             }
         });
 
         // --- Application State ---
         let applications = JSON.parse(localStorage.getItem('applications')) || [
-            {
-                id: '1',
-                company: 'Google',
-                role: 'Frontend Engineer',
-                status: 'applied',
-                dateApplied: '', // Not applied yet
-                lastDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 2 days left
-                location: 'Remote',
-                salary: '$150k - $180k',
-                sector: 'non-govt',
-                jobType: 'Full-time',
-                cvName: 'Resume.pdf',
-                cvUrl: null,
-                circularName: 'JD.pdf',
-                circularUrl: null,
-                url: 'https://careers.google.com'
-            },
-            {
-                id: '2',
-                company: 'OpenAI',
-                role: 'AI Researcher',
-                status: 'wishlist',
-                dateApplied: '', 
-                lastDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 10 days left
-                location: 'San Francisco',
-                salary: '$250k+',
-                sector: 'non-govt',
-                jobType: 'Full-time',
-                cvName: '',
-                cvUrl: null,
-                circularName: '',
-                circularUrl: null,
-                url: ''
-            }
+            { id: '1', company: 'Google', role: 'Frontend Engineer', status: 'applied', dateApplied: '', lastDate: new Date(
+                    Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], location: 'Remote',
+                salary: '$150k - $180k', sector: 'non-govt', jobType: 'Full-time', cvName: 'Resume.pdf', cvUrl: null,
+                circularName: 'JD.pdf', circularUrl: null, url: 'https://careers.google.com' },
+            { id: '2', company: 'OpenAI', role: 'AI Researcher', status: 'wishlist', dateApplied: '', lastDate: new Date(
+                    Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], location: 'San Francisco',
+                salary: '$250k+', sector: 'non-govt', jobType: 'Full-time', cvName: '', cvUrl: null, circularName: '',
+                circularUrl: null, url: '' }
         ];
         let viewMode = 'grid';
         let currentFiles = { cv: null, circular: null };
 
+        // ===== PAGINATION STATE =====
+        const ITEMS_PER_PAGE = 12;
+        let activeCurrentPage = 1;
+        let archiveCurrentPage = 1;
+
+        function getCurrentPage() {
+            return currentTab === 'active' ? activeCurrentPage : archiveCurrentPage;
+        }
+
+        function setCurrentPage(page) {
+            if (currentTab === 'active') activeCurrentPage = page;
+            else archiveCurrentPage = page;
+        }
+
+        function resetCurrentPage() {
+            if (currentTab === 'active') activeCurrentPage = 1;
+            else archiveCurrentPage = 1;
+        }
+
+        function resetPageAndRender() {
+            resetCurrentPage();
+            renderCurrentTab();
+        }
+
+        function goToPage(pageNum) {
+            setCurrentPage(pageNum);
+            renderCurrentTab();
+            // Scroll to top of content area
+            const slider = document.getElementById('tab-slider');
+            if (slider) {
+                const rect = slider.getBoundingClientRect();
+                if (rect.top < 0 || rect.top > window.innerHeight) {
+                    slider.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        }
+
+        function renderPaginationHTML(totalItems, currentPageNum) {
+            const maxPage = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+            if (totalItems <= ITEMS_PER_PAGE) return ''; // No pagination needed
+
+            const startItem = (currentPageNum - 1) * ITEMS_PER_PAGE + 1;
+            const endItem = Math.min(currentPageNum * ITEMS_PER_PAGE, totalItems);
+
+            // Build page buttons
+            let pageButtons = '';
+
+            // Determine visible page range
+            const maxVisible = 5;
+            let startPage = Math.max(1, currentPageNum - Math.floor(maxVisible / 2));
+            let endPage = Math.min(maxPage, startPage + maxVisible - 1);
+            if (endPage - startPage + 1 < maxVisible) {
+                startPage = Math.max(1, endPage - maxVisible + 1);
+            }
+
+            // First page + ellipsis
+            if (startPage > 1) {
+                pageButtons +=
+                    `<button class="page-nav-btn" onclick="goToPage(1)" title="Page 1">1</button>`;
+                if (startPage > 2) {
+                    pageButtons += `<span class="page-nav-btn ellipsis">…</span>`;
+                }
+            }
+
+            // Page numbers
+            for (let p = startPage; p <= endPage; p++) {
+                if (p === currentPageNum) {
+                    pageButtons +=
+                        `<button class="page-nav-btn active" disabled>${p}</button>`;
+                } else {
+                    pageButtons +=
+                        `<button class="page-nav-btn" onclick="goToPage(${p})" title="Page ${p}">${p}</button>`;
+                }
+            }
+
+            // Last page + ellipsis
+            if (endPage < maxPage) {
+                if (endPage < maxPage - 1) {
+                    pageButtons += `<span class="page-nav-btn ellipsis">…</span>`;
+                }
+                pageButtons +=
+                    `<button class="page-nav-btn" onclick="goToPage(${maxPage})" title="Page ${maxPage}">${maxPage}</button>`;
+            }
+
+            return `
+                <div class="pagination-wrapper">
+                    <div class="pagination-info">
+                        Showing <span>${startItem}-${endItem}</span> of <span>${totalItems}</span>
+                    </div>
+                    <div class="pagination-buttons">
+                        <button class="page-nav-btn" onclick="goToPage(${currentPageNum - 1})" ${currentPageNum === 1 ? 'disabled' : ''} title="Previous page">
+                            <i class="fas fa-chevron-left text-xs"></i>
+                        </button>
+                        ${pageButtons}
+                        <button class="page-nav-btn" onclick="goToPage(${currentPageNum + 1})" ${currentPageNum === maxPage ? 'disabled' : ''} title="Next page">
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </button>
+                    </div>
+                </div>`;
+        }
+
         const STATUS_MAP = {
             wishlist: { label: 'Wishlist', color: 'bg-gray-100 text-gray-700 border-gray-200' },
             applied: { label: 'Applied', color: 'bg-blue-100 text-blue-700 border-blue-200' },
-            preliminary: { label: 'Preliminary', color: 'bg-orange-100 text-orange-700 border-orange-200' },
+            preliminary: { label: 'Preliminary (Pass)', color: 'bg-orange-100 text-orange-700 border-orange-200' },
             written: { label: 'Written', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
             interview: { label: 'Interview', color: 'bg-purple-100 text-purple-700 border-purple-200' },
             offer: { label: 'Offer', color: 'bg-green-100 text-green-700 border-green-200' },
             rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700 border-red-200' }
         };
 
-        // --- Core Functions ---
-        
         function getUrgencyClass(app) {
-            // Only apply logic if "Date Applied" is empty
             if (app.dateApplied && app.dateApplied.trim() !== "") return "";
             if (!app.lastDate) return "";
-
             const today = new Date();
-            today.setHours(0,0,0,0);
+            today.setHours(0, 0, 0, 0);
             const deadline = new Date(app.lastDate);
-            deadline.setHours(0,0,0,0);
-            
-            const diffTime = deadline - today;
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
+            deadline.setHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
             if (diffDays < 3) return "urgency-danger";
             if (diffDays <= 7) return "urgency-warning";
             return "urgency-safe";
         }
 
-        async function handleFile(input, type) {
-            const file = input.files[0];
-            if (!file) return;
-            const label = document.getElementById(`${type}-label`);
-            label.innerText = '⏳ Uploading…';
+async function handleFile(input, type) {
+    const file = input.files[0];
+    if (!file) return;
+    const label = document.getElementById(`${type}-label`);
+    label.innerText = '⏳ Uploading…';
 
-            try {
-                const uid = currentUser ? currentUser.uid : 'guest';
-                const url = await uploadToSupabase(file, uid);
-                currentFiles[type] = { name: file.name, url };
-                label.innerText = '✅ ' + file.name;
-                label.classList.add('text-indigo-600', 'font-semibold');
-            } catch (err) {
-                console.error(err);
-                // Fallback to local blob if Supabase not configured yet
-                const url = URL.createObjectURL(file);
-                currentFiles[type] = { name: file.name, url };
-                label.innerText = file.name;
-                label.classList.add('text-indigo-600', 'font-semibold');
-            }
+    try {
+        const uid = currentUser ? currentUser.uid : 'guest';
+        let url;
+
+        // Check if file is an image (png, jpg, gif, webp, tiff, bmp, etc.)
+        if (file.type.startsWith('image/')) {
+            // Use Cloudinary for images
+            url = await uploadToCloudinary(file);
+            label.innerText = '🖼️ ' + file.name + ' (Cloudinary)';
+        } else {
+            // Use Supabase for documents (pdf, docx, etc.) and all other files
+            url = await uploadToSupabase(file, uid);
+            label.innerText = '📄 ' + file.name + ' (Supabase)';
         }
 
+        label.classList.add('text-indigo-600', 'font-semibold');
+        currentFiles[type] = { name: file.name, url };
+    } catch (err) {
+        console.error(err);
+        alert('Upload failed. Please check your service configuration.');
+        label.innerText = '❌ Upload failed';
+        currentFiles[type] = null;
+    }
+}
+
         function downloadFile(url, filename) {
-            if (!url) { alert('No file attached.'); return; }
-            // Cloud URLs — open directly in new tab (works for Supabase public URLs)
+            if (!url) { alert('No file attached.');
+                return; }
             const a = document.createElement('a');
             a.href = url;
             a.download = filename;
@@ -1019,9 +1429,11 @@
 
         function setView(mode) {
             viewMode = mode;
-            document.getElementById('btn-grid').className = mode === 'grid' ? 'p-1.5 rounded bg-slate-100 text-indigo-600 shadow-inner' : 'p-1.5 rounded text-slate-400';
-            document.getElementById('btn-list').className = mode === 'list' ? 'p-1.5 rounded bg-slate-100 text-indigo-600 shadow-inner' : 'p-1.5 rounded text-slate-400';
-            renderApplications();
+            document.getElementById('btn-grid').className = mode === 'grid' ?
+                'p-1.5 rounded bg-slate-100 text-indigo-600' : 'p-1.5 rounded text-slate-400';
+            document.getElementById('btn-list').className = mode === 'list' ?
+                'p-1.5 rounded bg-slate-100 text-indigo-600' : 'p-1.5 rounded text-slate-400';
+            renderCurrentTab();
         }
 
         function openModal(appId = null) {
@@ -1031,7 +1443,6 @@
             currentFiles = { cv: null, circular: null };
             document.getElementById('cv-label').innerText = "Select CV";
             document.getElementById('circular-label').innerText = "Select Circular";
-            
             if (appId) {
                 const app = applications.find(a => a.id === appId);
                 document.getElementById('edit-id').value = app.id;
@@ -1046,34 +1457,29 @@
                 document.getElementById('sector').value = app.sector;
                 document.getElementById('jobType').value = app.jobType;
                 document.getElementById('url').value = app.url;
-                
-                if (app.cvName) {
-                    document.getElementById('cv-label').innerText = app.cvName;
-                    document.getElementById('cv-label').classList.add('text-indigo-600', 'font-semibold');
-                }
-                if (app.circularName) {
-                    document.getElementById('circular-label').innerText = app.circularName;
-                    document.getElementById('circular-label').classList.add('text-indigo-600', 'font-semibold');
-                }
+                if (app.cvName) { document.getElementById('cv-label').innerText = app.cvName;
+                    document.getElementById('cv-label').classList.add('text-indigo-600', 'font-semibold'); }
+                if (app.circularName) { document.getElementById('circular-label').innerText = app.circularName;
+                    document.getElementById('circular-label').classList.add('text-indigo-600', 'font-semibold'); }
                 currentFiles.cv = { name: app.cvName, url: app.cvUrl };
                 currentFiles.circular = { name: app.circularName, url: app.circularUrl };
             } else {
                 document.getElementById('edit-id').value = '';
                 document.getElementById('modal-title').innerText = "New Application";
             }
-            
             modal.classList.remove('hidden');
         }
 
-        function closeModal() {
-            document.getElementById('modal').classList.add('hidden');
-        }
+        function closeModal() { document.getElementById('modal').classList.add('hidden'); }
 
         function deleteApp(id) {
+            const app = applications.find(a => a.id === id);
+            if (!app) return;
+            if (!confirm(`Are you sure you want to delete "${app.company} - ${app.role}"?\n\nThis action cannot be undone.`))
+                return;
             applications = applications.filter(a => a.id !== id);
             saveApplications();
-            renderApplications();
-            // ⚡ Delete only this one doc
+            renderCurrentTab();
             if (currentUser) userAppsRef().doc(id).delete().catch(err => console.warn("Firebase delete failed:", err));
         }
 
@@ -1097,38 +1503,31 @@
                 circularName: currentFiles.circular ? currentFiles.circular.name : '',
                 circularUrl: currentFiles.circular ? currentFiles.circular.url : null
             };
-
-            if (id) {
-                applications = applications.map(a => a.id === id ? appData : a);
-            } else {
-                applications.unshift(appData);
-            }
-            
+            if (id) { applications = applications.map(a => a.id === id ? appData : a); } else { applications.unshift(
+                appData); }
             closeModal();
             saveApplications();
-            renderApplications();
-            // ⚡ Only write/update this single doc in Firestore
-            if (currentUser) userAppsRef().doc(appData.id).set(appData).catch(err =>
-                console.warn("Firebase save failed:", err)
-            );
+            resetCurrentPage();
+            renderCurrentTab();
+            if (currentUser) userAppsRef().doc(appData.id).set(appData).catch(err => console.warn(
+                "Firebase save failed:", err));
         };
 
-        // --- Rendering Logic ---
-
+        // --- Stats ---
         function updateStats() {
+            const all = applications;
             const counts = {
-                total: applications.length,
-                applied: applications.filter(a => a.status === 'applied').length,
-                preliminary: applications.filter(a => a.status === 'preliminary').length,
-                written: applications.filter(a => a.status === 'written').length,
-                interviews: applications.filter(a => a.status === 'interview').length,
-                offers: applications.filter(a => a.status === 'offer').length
+                total: all.length,
+                applied: all.filter(a => a.status === 'applied').length,
+                preliminary: all.filter(a => a.status === 'preliminary').length,
+                written: all.filter(a => a.status === 'written').length,
+                interviews: all.filter(a => a.status === 'interview').length,
+                offers: all.filter(a => a.status === 'offer').length
             };
-
             document.getElementById('stats-container').innerHTML = `
                 ${renderStatCard('Total Applications', counts.total, 'fa-th-large', 'blue')}
                 ${renderStatCard('Applied', counts.applied, 'fa-paper-plane', 'amber')}
-                ${renderStatCard('Preliminary', counts.preliminary, 'fa-clipboard-check', 'orange')}
+                ${renderStatCard('Preliminary (Pass)', counts.preliminary, 'fa-clipboard-check', 'orange')}
                 ${renderStatCard('Written', counts.written, 'fa-pen-nib', 'indigo')}
                 ${renderStatCard('Interviews', counts.interviews, 'fa-calendar-alt', 'purple')}
                 ${renderStatCard('Offers', counts.offers, 'fa-chart-line', 'green')}
@@ -1153,13 +1552,11 @@
                         <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">${label}</p>
                         <p class="text-2xl font-black text-slate-900 leading-none">${val}</p>
                     </div>
-                </div>
-            `;
+                </div>`;
         }
 
-
         // ===== SORT =====
-        let currentSort = 'newest';
+        let currentSort = 'deadline-soon';
 
         function toggleSortMenu() {
             const btn = document.getElementById('sort-btn');
@@ -1167,8 +1564,6 @@
             btn.classList.toggle('open');
             menu.classList.toggle('open');
         }
-
-        // Close sort menu when clicking outside
         document.addEventListener('click', function(e) {
             const wrapper = document.getElementById('sort-wrapper');
             if (wrapper && !wrapper.contains(e.target)) {
@@ -1180,26 +1575,207 @@
         function setSort(value, label, el) {
             currentSort = value;
             document.getElementById('sort-label').textContent = label;
-            // Mark selected
             document.querySelectorAll('.sort-option').forEach(o => o.classList.remove('selected'));
             el.classList.add('selected');
-            // Mark btn active if not default
             document.getElementById('sort-btn').classList.toggle('active', value !== 'newest');
-            // Close menu
             document.getElementById('sort-btn').classList.remove('open');
             document.getElementById('sort-menu').classList.remove('open');
-            renderApplications();
+            resetCurrentPage();
+            renderCurrentTab();
         }
 
         function parseSalary(salaryStr) {
             if (!salaryStr) return 0;
-            // Extract first number from strings like "$150k - $180k" or "$250k+"
             const match = salaryStr.replace(/,/g, '').match(/[\d.]+/);
             if (!match) return 0;
             let val = parseFloat(match[0]);
             if (salaryStr.toLowerCase().includes('k')) val *= 1000;
             if (salaryStr.toLowerCase().includes('m')) val *= 1000000;
             return val;
+        }
+
+        // ===== ARCHIVE HELPERS =====
+        function isExpired(app) {
+            if (!app.lastDate) return false;
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const dl = new Date(app.lastDate);
+            dl.setHours(0, 0, 0, 0);
+            return dl < today;
+        }
+
+        function getActiveApps() { return applications.filter(a => !isExpired(a)); }
+
+        function getArchivedApps() { return applications.filter(a => isExpired(a)); }
+
+        function updateArchiveBadge() {
+            const badge = document.getElementById('archive-badge');
+            if (!badge) return;
+            const count = getArchivedApps().length;
+            if (count > 0) { badge.textContent = count;
+                badge.classList.remove('hidden'); } else badge.classList.add('hidden');
+        }
+
+        // ===== TAB SWITCHING =====
+        let currentTab = 'active';
+
+        function switchMainTab(tab) {
+            currentTab = tab;
+            const slider = document.getElementById('tab-slider');
+            slider.style.transform = tab === 'active' ? 'translateX(0%)' : 'translateX(-100%)';
+            const activeBtn = document.getElementById('tab-active-btn');
+            const archiveBtn = document.getElementById('tab-archive-btn');
+            if (tab === 'active') {
+                activeBtn.className =
+                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 bg-indigo-600 text-white shadow';
+                archiveBtn.className =
+                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 text-slate-500 hover:bg-slate-50';
+            } else {
+                archiveBtn.className =
+                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 bg-amber-500 text-white shadow';
+                activeBtn.className =
+                    'flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold transition-all duration-200 text-slate-500 hover:bg-slate-50';
+            }
+            resetCurrentPage();
+            renderCurrentTab();
+        }
+
+        function renderCurrentTab() {
+            if (currentTab === 'active') renderApplications();
+            else renderArchiveTab();
+        }
+
+        // ===== RENDER ARCHIVE TAB =====
+        function renderArchiveTab() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const filter = document.getElementById('status-filter').value;
+            const container = document.getElementById('archive-container');
+            const pagContainer = document.getElementById('archive-pagination-container');
+            const archived = sortApplications(getArchivedApps().filter(a => {
+                const ms = a.company.toLowerCase().includes(search) || a.role.toLowerCase().includes(search);
+                const mf = filter === 'all' || a.status === filter;
+                return ms && mf;
+            }));
+
+            updateStats();
+            updateArchiveBadge();
+
+            // Pagination logic
+            const totalItems = archived.length;
+            const maxPage = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+            let cp = getCurrentPage();
+            if (cp > maxPage) { cp = maxPage;
+                setCurrentPage(cp); }
+            const startIdx = (cp - 1) * ITEMS_PER_PAGE;
+            const paginatedItems = archived.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+
+            if (totalItems === 0) {
+                container.innerHTML = `<div class="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-amber-200">
+                    <div class="mx-auto w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center text-amber-400 mb-4">
+                        <i class="fas fa-archive text-2xl"></i>
+                    </div>
+                    <h3 class="text-lg font-semibold text-slate-800">No archived applications</h3>
+                    <p class="text-slate-400 mt-1 text-sm">Applications whose deadlines pass will appear here automatically.</p>
+                </div>`;
+                pagContainer.innerHTML = '';
+                return;
+            }
+
+            if (viewMode === 'grid') {
+                container.innerHTML = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    ${paginatedItems.map(app => renderArchiveGridCard(app)).join('')}
+                </div>`;
+            } else {
+                container.innerHTML = `<div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left min-w-[1000px]">
+                            <thead class="bg-amber-50 text-[10px] uppercase font-bold text-slate-500 border-b">
+                                <tr>
+                                    <th class="px-6 py-4">Company & Role</th>
+                                    <th class="px-6 py-4">Sector</th>
+                                    <th class="px-6 py-4">Type / Salary</th>
+                                    <th class="px-6 py-4">Files</th>
+                                    <th class="px-6 py-4">Status</th>
+                                    <th class="px-6 py-4">Dates</th>
+                                    <th class="px-6 py-4 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                ${paginatedItems.map(app => renderArchiveListRow(app)).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
+            }
+            pagContainer.innerHTML = renderPaginationHTML(totalItems, cp);
+        }
+
+        function renderArchiveGridCard(app) {
+            const status = STATUS_MAP[app.status];
+            const daysAgo = Math.floor((new Date() - new Date(app.lastDate)) / (1000 * 60 * 60 * 24));
+            return `
+                <div class="bg-white border-2 border-amber-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col h-full group">
+                    <div class="p-5 flex-grow">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 w-12 h-12 flex items-center justify-center overflow-hidden">
+                                <img src="${getCompanyLogoUrl(app.company)}" alt="${app.company} logo" class="w-9 h-9 object-contain rounded" onerror="this.onerror=null;this.src='';this.style.display='none';this.nextElementSibling.style.display='flex';" />
+                                <i class="fas fa-building text-xl text-slate-400" style="display:none;"></i>
+                            </div>
+                            <div class="flex gap-1">
+                                <button onclick="openNotepad('${app.id}','${app.role.replace(/'/g,"\\'")}','${app.company.replace(/'/g,"\\'")}')\" class="p-2 text-slate-400 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg" title="Note"><i class="fas fa-sticky-note"></i></button>
+                                <button onclick="openModal('${app.id}')" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg" title="Edit"><i class="fas fa-edit"></i></button>
+                                <button onclick="deleteArchivedApp('${app.id}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                        <h3 class="text-lg font-bold text-slate-900 mb-1 leading-tight">${app.role}</h3>
+                        <p class="text-slate-600 font-medium mb-3">${app.company}</p>
+                        <div class="flex gap-2 mb-3">
+                            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase ${status.color}">${status.label}</span>
+                            ${app.sector === 'govt' ? '<span class="bg-amber-100 text-amber-700 text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase">Govt</span>' : ''}
+                        </div>
+                        <div class="text-[13px] text-slate-500 space-y-2 border-t pt-3">
+                            ${app.location ? `<div class="flex items-center"><i class="fas fa-map-marker-alt w-5 text-slate-400"></i>${app.location}</div>` : ''}
+                            ${app.salary ? `<div class="flex items-center text-emerald-600 font-semibold"><i class="fas fa-dollar-sign w-5"></i>${app.salary}</div>` : ''}
+                            ${app.dateApplied ? `<div class="flex items-center"><i class="far fa-calendar-check w-5 text-slate-400"></i>Applied: ${app.dateApplied}</div>` : ''}
+                            <div class="flex items-center font-bold text-amber-600">
+                                <i class="far fa-calendar-times w-5"></i>
+                                Expired ${daysAgo === 0 ? 'today' : daysAgo + 'd ago'} — ${new Date(app.lastDate).toLocaleDateString()}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="px-5 py-3 bg-amber-50/50 border-t flex flex-wrap gap-2">
+                        ${app.cvName ? `<button onclick="downloadFile('${app.cvUrl}', '${app.cvName}')" class="text-[11px] bg-white border px-2 py-1 rounded shadow-sm hover:text-indigo-600 transition-colors"><i class="far fa-file-pdf text-red-500 mr-1"></i>CV</button>` : ''}
+                        ${app.circularName ? `<button onclick="downloadFile('${app.circularUrl}', '${app.circularName}')" class="text-[11px] bg-white border px-2 py-1 rounded shadow-sm hover:text-purple-600 transition-colors"><i class="fas fa-file-contract text-purple-500 mr-1"></i>Circular</button>` : ''}
+                        ${app.url ? `<a href="${app.url}" target="_blank" class="text-[11px] font-bold text-indigo-600 ml-auto flex items-center">Visit Site <i class="fas fa-external-link-alt ml-1"></i></a>` : ''}
+                    </div>
+                </div>`;
+        }
+
+        function renderArchiveListRow(app) {
+            const status = STATUS_MAP[app.status];
+            const daysAgo = Math.floor((new Date() - new Date(app.lastDate)) / (1000 * 60 * 60 * 24));
+            return `<tr class="hover:bg-amber-50/30 transition-colors group">
+                <td class="px-6 py-4"><div class="font-bold text-slate-900">${app.company}</div><div class="text-sm text-slate-500">${app.role}</div></td>
+                <td class="px-6 py-4"><span class="text-[11px] font-bold px-2 py-1 rounded ${app.sector === 'govt' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}">${app.sector === 'govt' ? 'Government' : 'Non-Govt'}</span></td>
+                <td class="px-6 py-4"><div class="text-xs text-slate-700 font-medium">${app.jobType || '—'}</div><div class="text-xs text-emerald-600 font-bold">${app.salary || '—'}</div></td>
+                <td class="px-6 py-4"><div class="flex gap-2">${app.cvName ? `<button onclick="downloadFile('${app.cvUrl}', '${app.cvName}')" class="p-2 border rounded text-indigo-500 hover:bg-indigo-50" title="Download CV"><i class="far fa-file-pdf"></i></button>` : ''}${app.circularName ? `<button onclick="downloadFile('${app.circularUrl}', '${app.circularName}')" class="p-2 border rounded text-purple-500 hover:bg-purple-50" title="Download Circular"><i class="fas fa-file-contract"></i></button>` : ''}</div></td>
+                <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${status.color}">${status.label}</span></td>
+                <td class="px-6 py-4"><div class="text-[11px] text-slate-500 flex items-center gap-1"><i class="far fa-calendar-check"></i> ${app.dateApplied ? new Date(app.dateApplied).toLocaleDateString() : '—'}</div><div class="text-[11px] text-amber-600 font-bold flex items-center gap-1 mt-1"><i class="far fa-calendar-times"></i> Expired ${daysAgo === 0 ? 'today' : daysAgo + 'd ago'}</div></td>
+                <td class="px-6 py-4 text-right"><div class="flex justify-end gap-2"><button onclick="openModal('${app.id}')" class="text-slate-400 hover:text-indigo-600 mx-1" title="Edit"><i class="fas fa-edit"></i></button><button onclick="deleteArchivedApp('${app.id}')" class="text-slate-400 hover:text-red-600" title="Delete"><i class="fas fa-trash"></i></button></div></td>
+            </tr>`;
+        }
+
+        function deleteArchivedApp(id) {
+            const app = applications.find(a => a.id === id);
+            if (!app) return;
+            if (!confirm(`Are you sure you want to delete "${app.company} - ${app.role}"?\n\nThis action cannot be undone.`))
+                return;
+            applications = applications.filter(a => a.id !== id);
+            saveApplications();
+            renderArchiveTab();
+            updateArchiveBadge();
+            updateStats();
+            if (currentUser) userAppsRef().doc(id).delete().catch(() => {});
         }
 
         function sortApplications(arr) {
@@ -1214,53 +1790,59 @@
                 case 'salary-low':
                     return sorted.sort((a, b) => parseSalary(a.salary) - parseSalary(b.salary));
                 case 'deadline-soon':
-                    return sorted.sort((a, b) => {
-                        if (!a.lastDate) return 1;
-                        if (!b.lastDate) return -1;
-                        return new Date(a.lastDate) - new Date(b.lastDate);
-                    });
+                    return sorted.sort((a, b) => { if (!a.lastDate) return 1; if (!b.lastDate) return -1; return new Date(a
+                            .lastDate) - new Date(b.lastDate); });
                 case 'deadline-late':
-                    return sorted.sort((a, b) => {
-                        if (!a.lastDate) return 1;
-                        if (!b.lastDate) return -1;
-                        return new Date(b.lastDate) - new Date(a.lastDate);
-                    });
+                    return sorted.sort((a, b) => { if (!a.lastDate) return 1; if (!b.lastDate) return -1; return new Date(b
+                            .lastDate) - new Date(a.lastDate); });
                 default:
                     return sorted;
             }
         }
 
+        // ===== RENDER ACTIVE APPLICATIONS =====
         function renderApplications() {
             const search = document.getElementById('search-input').value.toLowerCase();
             const filter = document.getElementById('status-filter').value;
             const container = document.getElementById('apps-container');
-            
-            const filtered = sortApplications(applications.filter(app => {
-                const matchesSearch = app.company.toLowerCase().includes(search) || app.role.toLowerCase().includes(search);
+            const pagContainer = document.getElementById('active-pagination-container');
+
+            const filtered = sortApplications(getActiveApps().filter(app => {
+                const matchesSearch = app.company.toLowerCase().includes(search) || app.role.toLowerCase()
+                    .includes(search);
                 const matchesFilter = filter === 'all' || app.status === filter;
                 return matchesSearch && matchesFilter;
             }));
 
             updateStats();
+            updateArchiveBadge();
 
-            if (filtered.length === 0) {
+            // Pagination logic
+            const totalItems = filtered.length;
+            const maxPage = Math.ceil(totalItems / ITEMS_PER_PAGE) || 1;
+            let cp = getCurrentPage();
+            if (cp > maxPage) { cp = maxPage;
+                setCurrentPage(cp); }
+            const startIdx = (cp - 1) * ITEMS_PER_PAGE;
+            const paginatedItems = filtered.slice(startIdx, startIdx + ITEMS_PER_PAGE);
+
+            if (totalItems === 0) {
                 container.innerHTML = `
                     <div class="text-center py-20 bg-white rounded-2xl border-2 border-dashed border-slate-200">
                         <div class="mx-auto w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center text-slate-400 mb-4">
                             <i class="fas fa-search text-2xl"></i>
                         </div>
                         <h3 class="text-lg font-semibold text-slate-800">No applications found</h3>
-                    </div>
-                `;
+                    </div>`;
+                pagContainer.innerHTML = '';
                 return;
             }
 
             if (viewMode === 'grid') {
                 container.innerHTML = `
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        ${filtered.map(app => renderGridCard(app)).join('')}
-                    </div>
-                `;
+                        ${paginatedItems.map(app => renderGridCard(app)).join('')}
+                    </div>`;
             } else {
                 container.innerHTML = `
                     <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
@@ -1278,20 +1860,19 @@
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y">
-                                    ${filtered.map(app => renderListRow(app)).join('')}
+                                    ${paginatedItems.map(app => renderListRow(app)).join('')}
                                 </tbody>
                             </table>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             }
+            pagContainer.innerHTML = renderPaginationHTML(totalItems, cp);
+            setTimeout(updateNoteIndicators, 0);
         }
 
         // ===== COMPANY LOGO HELPER =====
         function getCompanyLogoUrl(companyName) {
             const name = companyName.trim().toLowerCase();
-
-            // Known domain overrides (especially for local/BD companies)
             const overrides = {
                 'google': 'google.com',
                 'openai': 'openai.com',
@@ -1330,28 +1911,9 @@
                 'dutch bangla bank': 'dutchbanglabank.com',
                 'dbbl': 'dutchbanglabank.com',
                 'brac bank': 'bracbank.com',
-                'islami bank': 'islamibankbd.com',
-                'sonali bank': 'sonalibank.com.bd',
-                'janata bank': 'janatabank-bd.com',
-                'agrani bank': 'agranibank.org',
-                'rupali bank': 'rupalibank.org',
-                'city bank': 'thecitybank.com',
-                'eastern bank': 'ebl.com.bd',
-                'prime bank': 'primebank.com.bd',
-                'southeast bank': 'southeastbank.com.bd',
-                'trust bank': 'trustbank.com.bd',
-                'uttara bank': 'uttarabank-bd.com',
-                'ific bank': 'ificbankbd.com',
-                'bank asia': 'bankasia.com.bd',
-                'mutual trust bank': 'mutualtrustbank.com',
-                'national bank': 'nblbd.com',
-                'exim bank': 'eximbankbd.com',
-                'social islami bank': 'siblbd.com',
-                'shahjalal islami bank': 'sjiblbd.com',
                 'grameenphone': 'grameenphone.com',
                 'robi': 'robi.com.bd',
                 'banglalink': 'banglalink.net',
-                'teletalk': 'teletalk.com.bd',
                 'bkash': 'bkash.com',
                 'nagad': 'nagad.com.bd',
                 'walton': 'waltonbd.com',
@@ -1359,43 +1921,35 @@
                 'square': 'squaregroup.com.bd',
                 'beximco': 'beximco.com',
                 'bashundhara': 'bashundharagroup.com',
-                'akij': 'akijgroup.com.bd',
             };
-
             const domain = overrides[name] || (name.replace(/[^a-z0-9]/g, '') + '.com');
-            // Use Google favicon API — free, no API key, works for any domain
             return 'https://www.google.com/s2/favicons?domain=' + domain + '&sz=64';
         }
 
-                function renderGridCard(app) {
+        function renderGridCard(app) {
             const status = STATUS_MAP[app.status];
             const urgency = getUrgencyClass(app);
             return `
                 <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all flex flex-col h-full group ${urgency}">
                     <div class="p-5 flex-grow">
                         <div class="flex justify-between items-start mb-4">
-                            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 w-12 h-12 flex items-center justify-center overflow-hidden">
-                                <img
-                                    src="${getCompanyLogoUrl(app.company)}"
-                                    alt="${app.company} logo"
-                                    class="w-9 h-9 object-contain rounded"
-                                    onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                                />
+                            <div class="bg-slate-50 p-2 rounded-xl border border-slate-100 w-12 h-12 flex items-center justify-center overflow-hidden" style="position:relative;">
+                                <img src="${getCompanyLogoUrl(app.company)}" alt="${app.company} logo" class="w-9 h-9 object-contain rounded" onerror="this.onerror=null; this.src=''; this.style.display='none'; this.nextElementSibling.style.display='flex';" />
                                 <i class="fas fa-building text-xl text-slate-400" style="display:none;"></i>
+                                <span data-note-dot="${app.id}" style="display:none;position:absolute;top:2px;right:2px;width:8px;height:8px;background:#fdd835;border-radius:50%;border:1.5px solid #f9a825;"></span>
                             </div>
                             <div class="flex gap-1">
+                                <button onclick="openNotepad('${app.id}','${app.role.replace(/'/g,"\\'")}','${app.company.replace(/'/g,"\\'")}')\" class="p-2 text-slate-400 hover:text-yellow-500 hover:bg-yellow-50 rounded-lg" title="Note"><i class="fas fa-sticky-note"></i></button>
                                 <button onclick="openModal('${app.id}')" class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg"><i class="fas fa-edit"></i></button>
                                 <button onclick="deleteApp('${app.id}')" class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg"><i class="fas fa-trash"></i></button>
                             </div>
                         </div>
                         <h3 class="text-lg font-bold text-slate-900 mb-1 leading-tight">${app.role}</h3>
                         <p class="text-slate-600 font-medium mb-4">${app.company}</p>
-                        
                         <div class="flex gap-2 mb-4">
                             <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold border uppercase ${status.color}">${status.label}</span>
                             ${app.sector === 'govt' ? '<span class="bg-amber-100 text-amber-700 text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase">Govt</span>' : ''}
                         </div>
-                        
                         <div class="text-[13px] text-slate-500 space-y-2 border-t pt-4">
                             ${app.location ? `<div class="flex items-center"><i class="fas fa-map-marker-alt w-5 text-slate-400"></i>${app.location}</div>` : ''}
                             ${app.salary ? `<div class="flex items-center text-emerald-600 font-semibold"><i class="fas fa-dollar-sign w-5"></i>${app.salary}</div>` : ''}
@@ -1411,158 +1965,64 @@
                         ${app.circularName ? `<button onclick="downloadFile('${app.circularUrl}', '${app.circularName}')" class="text-[11px] bg-white border px-2 py-1 rounded shadow-sm hover:text-purple-600 transition-colors"><i class="fas fa-file-contract text-purple-500 mr-1"></i>Circular</button>` : ''}
                         ${app.url ? `<a href="${app.url}" target="_blank" class="text-[11px] font-bold text-indigo-600 ml-auto flex items-center">Visit Site <i class="fas fa-external-link-alt ml-1"></i></a>` : ''}
                     </div>
-                </div>
-            `;
+                </div>`;
         }
 
-function renderListRow(app) {
-    const status = STATUS_MAP[app.status];
-    const urgency = getUrgencyClass(app);
-
-    return `
-        <tr class="hover:bg-slate-50/50 transition-colors group ${urgency}">
-            
-            <!-- Company & Role -->
-            <td class="px-6 py-4">
-                <div>
-                    <div class="font-bold text-slate-900">${app.company}</div>
-                    <div class="text-sm text-slate-500">${app.role}</div>
-                </div>
-            </td>
-
-            <!-- Sector -->
-            <td class="px-6 py-4">
-                <span class="text-[11px] font-bold px-2 py-1 rounded ${
-                    app.sector === 'govt'
-                        ? 'bg-amber-50 text-amber-600 border border-amber-100'
-                        : 'bg-blue-50 text-blue-600 border border-blue-100'
-                }">
-                    ${app.sector === 'govt' ? 'Government' : 'Non-Govt'}
-                </span>
-            </td>
-
-            <!-- Type / Salary -->
-            <td class="px-6 py-4">
-                <div class="text-xs text-slate-700 font-medium">${app.jobType || '—'}</div>
-                <div class="text-xs text-emerald-600 font-bold">${app.salary || '—'}</div>
-            </td>
-
-            <!-- Files -->
-            <td class="px-6 py-4">
-                <div class="flex gap-2">
-                    ${app.cvName 
-                        ? `<button onclick="downloadFile('${app.cvUrl}', '${app.cvName}')" 
-                                class="p-2 border rounded text-indigo-500 hover:bg-indigo-50">
-                                <i class="far fa-file"></i>
-                           </button>` 
-                        : ''}
-
-                    ${app.circularName 
-                        ? `<button onclick="downloadFile('${app.circularUrl}', '${app.circularName}')" 
-                                class="p-2 border rounded text-purple-500 hover:bg-purple-50">
-                                <i class="fas fa-upload"></i>
-                           </button>` 
-                        : ''}
-                </div>
-            </td>
-
-            <!-- Status -->
-            <td class="px-6 py-4">
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${status.color}">
-                    ${status.label}
-                </span>
-            </td>
-
-            <!-- Dates -->
-            <td class="px-6 py-4">
-                <div class="text-[11px] text-slate-500 flex items-center gap-1">
-                    <i class="far fa-clock"></i>
-                    App: ${app.dateApplied ? new Date(app.dateApplied).toLocaleDateString() : '—'}
-                </div>
-
-                ${app.lastDate ? `
-                    <div class="text-[11px] text-amber-600 font-bold flex items-center gap-1">
-                        <i class="far fa-calendar"></i>
-                        End: ${new Date(app.lastDate).toLocaleDateString()}
-                    </div>
-                ` : ''}
-            </td>
-
-            <!-- Actions -->
-            <td class="px-6 py-4 text-right">
-                <div class="flex justify-end gap-2">
-                    <button onclick="openModal('${app.id}')" 
-                        class="text-slate-400 hover:text-indigo-600 mx-2">
-                        <i class="fas fa-edit"></i>
-                        </button>
-
-                    <button onclick="deleteApp('${app.id}')" 
-                        class="text-slate-400 hover:text-red-600">
-                        <i class="fas fa-trash"></i>
-                        </button>
-                </div>
-            </td>
-
-        </tr>
-    `;
-}
+        function renderListRow(app) {
+            const status = STATUS_MAP[app.status];
+            const urgency = getUrgencyClass(app);
+            return `
+                <tr class="hover:bg-slate-50/50 transition-colors group ${urgency}">
+                    <td class="px-6 py-4"><div class="font-bold text-slate-900">${app.company}</div><div class="text-sm text-slate-500">${app.role}</div></td>
+                    <td class="px-6 py-4"><span class="text-[11px] font-bold px-2 py-1 rounded ${app.sector === 'govt' ? 'bg-amber-50 text-amber-600 border border-amber-100' : 'bg-blue-50 text-blue-600 border border-blue-100'}">${app.sector === 'govt' ? 'Government' : 'Non-Govt'}</span></td>
+                    <td class="px-6 py-4"><div class="text-xs text-slate-700 font-medium">${app.jobType || '—'}</div><div class="text-xs text-emerald-600 font-bold">${app.salary || '—'}</div></td>
+                    <td class="px-6 py-4"><div class="flex gap-2">${app.cvName ? `<button onclick="downloadFile('${app.cvUrl}', '${app.cvName}')" class="p-2 border rounded text-indigo-500 hover:bg-indigo-50"><i class="far fa-file"></i></button>` : ''}${app.circularName ? `<button onclick="downloadFile('${app.circularUrl}', '${app.circularName}')" class="p-2 border rounded text-purple-500 hover:bg-purple-50"><i class="fas fa-upload"></i></button>` : ''}</div></td>
+                    <td class="px-6 py-4"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold border uppercase tracking-wider ${status.color}">${status.label}</span></td>
+                    <td class="px-6 py-4"><div class="text-[11px] text-slate-500 flex items-center gap-1"><i class="far fa-clock"></i> App: ${app.dateApplied ? new Date(app.dateApplied).toLocaleDateString() : '—'}</div>${app.lastDate ? `<div class="text-[11px] text-amber-600 font-bold flex items-center gap-1"><i class="far fa-calendar"></i> End: ${new Date(app.lastDate).toLocaleDateString()}</div>` : ''}</td>
+                    <td class="px-6 py-4 text-right"><div class="flex justify-end gap-2"><button onclick="openModal('${app.id}')" class="text-slate-400 hover:text-indigo-600 mx-2"><i class="fas fa-edit"></i></button><button onclick="deleteApp('${app.id}')" class="text-slate-400 hover:text-red-600"><i class="fas fa-trash"></i></button></div></td>
+                </tr>`;
+        }
 
         async function handleProfilePhoto(input) {
             const file = input.files[0];
             if (!file) return;
             const uid = currentUser ? currentUser.uid : 'local';
-
-            // Show preview instantly while uploading
             const reader = new FileReader();
             reader.onload = (e) => {
                 document.getElementById('profile-img').src = e.target.result;
                 document.getElementById('user-avatar').src = e.target.result;
-                // Save locally immediately as fallback
                 localStorage.setItem('profile_photo_' + uid, e.target.result);
             };
             reader.readAsDataURL(file);
-
-            // Upload to Cloudinary and replace with permanent URL
             try {
                 const url = await uploadToCloudinary(file);
                 document.getElementById('profile-img').src = url;
                 document.getElementById('user-avatar').src = url;
                 localStorage.setItem('profile_photo_' + uid, url);
-                // Save URL to Firestore profile too
-                if (currentUser) {
-                    db.collection('users').doc(uid).set({ profile: { photoURL: url } }, { merge: true }).catch(()=>{});
-                }
-            } catch(e) {
-                // Keep local base64 as fallback — already saved above
-                console.warn('Cloudinary upload failed, using local storage:', e);
-            }
+                if (currentUser) { db.collection('users').doc(uid).set({ profile: { photoURL: url } }, { merge: true }).catch(
+                        () => {}); }
+            } catch (e) { console.warn('Cloudinary upload failed, using local storage:', e); }
         }
 
-        function saveApplications() {
-            localStorage.setItem('applications', JSON.stringify(applications));
-        }
+        function saveApplications() { localStorage.setItem('applications', JSON.stringify(applications)); }
 
         // ===== HAMBURGER MENU =====
-        function toggleHamburger() {
-            document.getElementById('hamburger-menu').classList.toggle('open');
-        }
+        function toggleHamburger() { document.getElementById('hamburger-menu').classList.toggle('open'); }
+
         function closeHamburger() {
             document.getElementById('hamburger-menu').classList.remove('open');
             document.getElementById('ei-menu').classList.remove('open');
             document.getElementById('export-menu').classList.remove('open');
         }
-        function toggleEIMenu(e) {
-            e.stopPropagation();
+
+        function toggleEIMenu(e) { e.stopPropagation();
             document.getElementById('ei-menu').classList.toggle('open');
-            document.getElementById('export-menu').classList.remove('open');
-        }
-        function toggleExportMenu(e) {
-            e.stopPropagation();
-            document.getElementById('export-menu').classList.toggle('open');
-        }
+            document.getElementById('export-menu').classList.remove('open'); }
+
+        function toggleExportMenu(e) { e.stopPropagation();
+            document.getElementById('export-menu').classList.toggle('open'); }
         document.addEventListener('click', function(e) {
             if (!document.getElementById('hamburger-wrapper').contains(e.target)) closeHamburger();
-            // Sort menu
             const wrapper = document.getElementById('sort-wrapper');
             if (wrapper && !wrapper.contains(e.target)) {
                 document.getElementById('sort-btn').classList.remove('open');
@@ -1571,43 +2031,174 @@ function renderListRow(app) {
         });
 
         // ===== EXPORT PDF =====
-        function exportPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape' });
-            doc.setFontSize(16);
-            doc.text('CareerPath — Job Applications', 14, 16);
-            doc.setFontSize(10);
-            doc.text('Exported: ' + new Date().toLocaleDateString(), 14, 23);
-            const cols = ['Company','Role','Status','Sector','Location','Salary','Applied','Deadline','Job Link'];
-            const rows = applications.map(a => [
-                a.company, a.role, a.status, a.sector === 'govt' ? 'Government' : 'Non-Govt',
-                a.location||'', a.salary||'', a.dateApplied||'', a.lastDate||'', a.url||''
-            ]);
-            doc.autoTable({ head: [cols], body: rows, startY: 28, styles: { fontSize: 8 }, headStyles: { fillColor: [99,102,241] } });
-            doc.save('CareerPath_Applications.pdf');
+async function exportPDF() {
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF({ orientation: 'landscape' });
+
+        // ─── 1. Centered title ────────────────────────────
+        const title = 'CareerPath | Job Application Tracker';
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        const pageWidth = doc.internal.pageSize.width;
+        doc.text(title, pageWidth / 2, 18, { align: 'center' });
+
+        // ─── 2. Profile screenshot (full width) ──────────
+        const profileCard = document.querySelector('.profile-card');
+        let profileImgData = null;
+        if (profileCard) {
+            const overlays = profileCard.querySelectorAll('.photo-overlay');
+            overlays.forEach(o => o.style.opacity = '0');
+            const canvas = await html2canvas(profileCard, {
+                scale: 3,
+                useCORS: true,
+                allowTaint: false,
+                backgroundColor: '#ffffff'
+            });
+            overlays.forEach(o => o.style.opacity = '');
+            profileImgData = canvas.toDataURL('image/png');
         }
+
+        const leftMargin = 14;
+        const rightMargin = 14;
+        const tableWidth = pageWidth - leftMargin - rightMargin;
+        let currentY = 24;
+
+        if (profileImgData && profileCard) {
+            const aspectRatio = profileCard.offsetHeight / profileCard.offsetWidth;
+            const imgHeight = tableWidth * aspectRatio;
+            doc.addImage(profileImgData, 'PNG', leftMargin, currentY, tableWidth, imgHeight);
+            currentY += imgHeight + 6;
+        }
+
+        // ─── 3. Helper to draw a single table ────────────
+        const columns = [
+            'Company', 'Role', 'Status', 'Sector', 'Location', 'Salary',
+            'Date Applied', 'Deadline', 'Job Link', 'Notes'   // ← Added Notes
+        ];
+
+        function drawTable(apps, heading, headerColor) {
+            if (apps.length === 0) {
+                doc.setFontSize(14);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(...headerColor);
+                doc.text(heading, leftMargin, currentY);
+                currentY += 8;
+                doc.setFontSize(10);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(100);
+                doc.text('No applications found.', leftMargin + 2, currentY);
+                currentY += 10;
+                return;
+            }
+
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...headerColor);
+            doc.text(heading, leftMargin, currentY);
+            currentY += 8;
+            doc.setTextColor(30);
+
+            const rows = apps.map(app => [
+                app.company,
+                app.role,
+                app.status,
+                app.sector === 'govt' ? 'Government' : 'Non-Govt',
+                app.location || '',
+                app.salary || '',
+                app.dateApplied || '',
+                app.lastDate || '',
+                app.url || '',
+                getNoteText(app.id)   // ← Added Notes content
+            ]);
+
+            doc.autoTable({
+                head: [columns],
+                body: rows,
+                startY: currentY,
+                margin: { left: leftMargin, right: rightMargin },
+                styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+                headStyles: { fillColor: headerColor, textColor: [255, 255, 255] },
+            });
+
+            currentY = doc.lastAutoTable.finalY + 10;
+        }
+
+        // ─── 4. Active applications table ────────────────
+        const activeApps = applications.filter(app => !isExpired(app));
+        drawTable(activeApps, 'Active Applications', [14, 165, 233]);
+
+        // ─── 5. Archived applications table ──────────────
+        const archivedApps = applications.filter(app => isExpired(app));
+        drawTable(archivedApps, 'Archived Applications', [255, 0, 0]);
+
+        // ─── 6. Date / Time on every page ──────────────────
+        const now = new Date().toLocaleString();
+        const totalPages = doc.internal.getNumberOfPages();
+        doc.setFontSize(9);
+        doc.setTextColor(100);
+        for (let i = 1; i <= totalPages; i++) {
+            doc.setPage(i);
+            doc.text(
+                `Exported: ${now}`,
+                pageWidth - rightMargin,
+                doc.internal.pageSize.height - 12,
+                { align: 'right' }
+            );
+        }
+
+        doc.save('CareerPath_Applications.pdf');
+    } catch (error) {
+        console.error("PDF export failed:", error);
+        alert("PDF export failed. See console for details.");
+    }
+}
 
         // ===== EXPORT EXCEL =====
-        function exportExcel() {
-            const ws_data = [
-                ['Company','Role','Status','Sector','Location','Salary','Job Type','Date Applied','Deadline','Job Link'],
-                ...applications.map(a => [
-                    a.company, a.role, a.status, a.sector === 'govt' ? 'Government' : 'Non-Govt',
-                    a.location||'', a.salary||'', a.jobType||'', a.dateApplied||'', a.lastDate||'', a.url||''
-                ])
-            ];
-            const wb = XLSX.utils.book_new();
-            const ws = XLSX.utils.aoa_to_sheet(ws_data);
-            ws['!cols'] = ws_data[0].map(() => ({ wch: 20 }));
-            XLSX.utils.book_append_sheet(wb, ws, 'Applications');
-            XLSX.writeFile(wb, 'CareerPath_Applications.xlsx');
-        }
+function exportExcel() {
+    const activeApps = getActiveApps();
+    const archivedApps = getArchivedApps();
+
+    const header = [
+        'Company', 'Role', 'Status', 'Sector', 'Location', 'Salary',
+        'Job Type', 'Date Applied', 'Deadline', 'Job Link', 'Notes'   // ← Added Notes
+    ];
+
+    const mapAppToRow = (app) => [
+        app.company,
+        app.role,
+        app.status,
+        app.sector === 'govt' ? 'Government' : 'Non-Govt',
+        app.location || '',
+        app.salary || '',
+        app.jobType || '',
+        app.dateApplied || '',
+        app.lastDate || '',
+        app.url || '',
+        getNoteText(app.id)   // ← Added Notes content
+    ];
+
+    const wb = XLSX.utils.book_new();
+
+    // Active sheet
+    const activeData = [header, ...activeApps.map(mapAppToRow)];
+    const activeWs = XLSX.utils.aoa_to_sheet(activeData);
+    activeWs['!cols'] = header.map(() => ({ wch: 20 }));
+    XLSX.utils.book_append_sheet(wb, activeWs, 'Active');
+
+    // Archive sheet
+    const archiveData = [header, ...archivedApps.map(mapAppToRow)];
+    const archiveWs = XLSX.utils.aoa_to_sheet(archiveData);
+    archiveWs['!cols'] = header.map(() => ({ wch: 20 }));
+    XLSX.utils.book_append_sheet(wb, archiveWs, 'Archive');
+
+    XLSX.writeFile(wb, 'CareerPath_Applications.xlsx');
+}
 
         // ===== IMPORT EXCEL =====
-        function triggerImport() {
-            document.getElementById('import-excel-input').value = '';
-            document.getElementById('import-excel-input').click();
-        }
+        function triggerImport() { document.getElementById('import-excel-input').value = '';
+            document.getElementById('import-excel-input').click(); }
+
         function importFromExcel(input) {
             const file = input.files[0];
             if (!file) return;
@@ -1618,11 +2209,10 @@ function renderListRow(app) {
                     const ws = wb.Sheets[wb.SheetNames[0]];
                     const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
                     if (rows.length < 2) return alert('No data found in the Excel file.');
-                    // Header: Company, Role, Status, Sector, Location, Salary, Job Type, Date Applied, Deadline, Job Link
                     let imported = 0;
                     for (let i = 1; i < rows.length; i++) {
                         const r = rows[i];
-                        if (!r[0]) continue; // skip empty rows
+                        if (!r[0]) continue;
                         const app = {
                             id: Date.now().toString() + i,
                             company: r[0] || '',
@@ -1635,20 +2225,20 @@ function renderListRow(app) {
                             dateApplied: r[7] || '',
                             lastDate: r[8] || '',
                             url: r[9] || '',
-                            cvName: '', cvUrl: null, circularName: '', circularUrl: null
+                            cvName: '',
+                            cvUrl: null,
+                            circularName: '',
+                            circularUrl: null
                         };
                         applications.unshift(app);
-                        if (currentUser) {
-                            await userAppsRef().doc(app.id).set(app).catch(()=>{});
-                        }
+                        if (currentUser) { await userAppsRef().doc(app.id).set(app).catch(() => {}); }
                         imported++;
                     }
                     saveApplications();
-                    renderApplications();
+                    resetCurrentPage();
+                    renderCurrentTab();
                     alert(`✅ Successfully imported ${imported} application${imported !== 1 ? 's' : ''}!`);
-                } catch(err) {
-                    alert('Error reading Excel file. Please use the exported template format.');
-                }
+                } catch (err) { alert('Error reading Excel file. Please use the exported template format.'); }
             };
             reader.readAsArrayBuffer(file);
         }
@@ -1659,7 +2249,6 @@ function renderListRow(app) {
         function openProfileModal(isNew = false) {
             profileModalIsNew = isNew;
             const overlay = document.getElementById('profile-modal-overlay');
-            // Fill fields
             const p = getLocalProfile();
             document.getElementById('pmodal-name').value = p.name || '';
             document.getElementById('pmodal-email').value = currentUser ? currentUser.email : '';
@@ -1667,14 +2256,11 @@ function renderListRow(app) {
             document.getElementById('pmodal-linkedin').value = p.linkedin || '';
             document.getElementById('pmodal-address').value = p.address || '';
             document.getElementById('pmodal-photo').src = p.image || document.getElementById('user-avatar').src;
-            // Show/hide skip button
             document.getElementById('pmodal-skip-btn').style.display = isNew ? '' : 'none';
             overlay.classList.remove('hidden');
         }
 
-        function skipProfileModal() {
-            document.getElementById('profile-modal-overlay').classList.add('hidden');
-        }
+        function skipProfileModal() { document.getElementById('profile-modal-overlay').classList.add('hidden'); }
 
         async function saveProfileModal() {
             const name = document.getElementById('pmodal-name').value.trim();
@@ -1683,24 +2269,17 @@ function renderListRow(app) {
             const address = document.getElementById('pmodal-address').value.trim();
             const image = document.getElementById('pmodal-photo').src;
             const uid = currentUser ? currentUser.uid : 'local';
-
-            // Save photo in its own dedicated key — never sent to Firestore as base64
             if (image && !image.includes('dicebear') && !image.startsWith('https://api.')) {
                 localStorage.setItem('profile_photo_' + uid, image);
             }
-
-            // Text-only profile saved to localStorage + Firestore
             const textProfile = { name, phone, linkedin, address };
             localStorage.setItem('profile_' + uid, JSON.stringify(textProfile));
-
             if (currentUser) {
                 const storedPhoto = localStorage.getItem('profile_photo_' + uid) || '';
                 const isCloudUrl = storedPhoto.startsWith('https://res.cloudinary') || storedPhoto.startsWith('https://');
-                db.collection('users').doc(currentUser.uid).set({
-                    profile: { ...textProfile, ...(isCloudUrl ? { photoURL: storedPhoto } : {}) }
-                }, { merge: true }).catch(()=>{});
+                db.collection('users').doc(currentUser.uid).set({ profile: { ...textProfile, ...(isCloudUrl ? { photoURL: storedPhoto } : {}) } },
+                    { merge: true }).catch(() => {});
             }
-
             applyProfileToPage({ ...textProfile, image });
             document.getElementById('profile-modal-overlay').classList.add('hidden');
         }
@@ -1708,26 +2287,20 @@ function renderListRow(app) {
         async function handlePmodalPhoto(input) {
             const file = input.files[0];
             if (!file) return;
-            // Instant local preview
             const reader = new FileReader();
             reader.onload = (e) => { document.getElementById('pmodal-photo').src = e.target.result; };
             reader.readAsDataURL(file);
-            // Upload to Cloudinary in background
             try {
                 const url = await uploadToCloudinary(file);
                 document.getElementById('pmodal-photo').src = url;
-                // Store permanently right away
                 const uid = currentUser ? currentUser.uid : 'local';
                 localStorage.setItem('profile_photo_' + uid, url);
-            } catch(e) {
-                console.warn('Cloudinary upload failed:', e);
-            }
+            } catch (e) { console.warn('Cloudinary upload failed:', e); }
         }
 
         function getLocalProfile() {
             const uid = currentUser ? currentUser.uid : 'local';
             const text = JSON.parse(localStorage.getItem('profile_' + uid) || '{}');
-            // Photo lives in its own key — can never be overwritten by Firestore sync
             const photo = localStorage.getItem('profile_photo_' + uid);
             if (photo) text.image = photo;
             return text;
@@ -1741,9 +2314,11 @@ function renderListRow(app) {
             const addressEl = document.getElementById('user-address-text');
             if (addressEl) addressEl.textContent = '—';
             const linkedinEl = document.getElementById('user-linkedin-link');
-            if (linkedinEl) { linkedinEl.href = '#'; linkedinEl.textContent = '—'; }
+            if (linkedinEl) { linkedinEl.href = '#';
+                linkedinEl.textContent = '—'; }
             const emailEl = document.getElementById('user-email-link');
-            if (emailEl) { emailEl.href = '#'; emailEl.textContent = '—'; }
+            if (emailEl) { emailEl.href = '#';
+                emailEl.textContent = '—'; }
             const avatarEl = document.getElementById('user-avatar');
             if (avatarEl) avatarEl.src = 'https://api.dicebear.com/7.x/avataaars/svg?seed=user';
             const profileImgEl = document.getElementById('profile-img');
@@ -1768,56 +2343,50 @@ function renderListRow(app) {
             }
             if (currentUser) {
                 const emailLink = document.getElementById('user-email-link');
-                if (emailLink) { emailLink.href = 'mailto:' + currentUser.email; emailLink.textContent = currentUser.email; }
+                if (emailLink) { emailLink.href = 'mailto:' + currentUser.email;
+                    emailLink.textContent = currentUser.email; }
             }
         }
 
         async function loadUserProfile() {
             if (!currentUser) return;
-
-            // Step 1: Apply localStorage instantly (photo always lives here)
             const local = getLocalProfile();
             if (Object.keys(local).length) applyProfileToPage(local);
-
-            // Step 2: Sync text + cloud photo URL from Firestore in background
             try {
                 const doc = await db.collection('users').doc(currentUser.uid).get();
                 if (doc.exists && doc.data().profile) {
                     const remote = doc.data().profile;
-                    // If Firestore has a Cloudinary URL, save it locally for future offline use
                     if (remote.photoURL && remote.photoURL.startsWith('https://')) {
                         localStorage.setItem('profile_photo_' + currentUser.uid, remote.photoURL);
                     }
                     const photo = localStorage.getItem('profile_photo_' + currentUser.uid);
                     const merged = { ...remote, image: photo || local.image };
-                    // Update text fields in localStorage
-                    const { name='', phone='', linkedin='', address='' } = remote;
+                    const { name = '', phone = '', linkedin = '', address = '' } = remote;
                     localStorage.setItem('profile_' + currentUser.uid, JSON.stringify({ name, phone, linkedin, address }));
                     applyProfileToPage(merged);
                 }
-            } catch(e) {}
-
-            // Always set email from Firebase Auth
+            } catch (e) {}
             const emailLink = document.getElementById('user-email-link');
-            if (emailLink) { emailLink.href = 'mailto:' + currentUser.email; emailLink.textContent = currentUser.email; }
+            if (emailLink) { emailLink.href = 'mailto:' + currentUser.email;
+                emailLink.textContent = currentUser.email; }
         }
 
         async function loadApplicationsFromFirebase() {
             if (!currentUser) return;
             try {
                 const snapshot = await userAppsRef().get();
-                if (snapshot.empty) { renderApplications(); updateDeadlineSlider(); return; }
+                if (snapshot.empty) { renderCurrentTab();
+                    updateDeadlineSlider(); return; }
                 const firebaseApps = [];
                 snapshot.forEach(doc => firebaseApps.push({ id: doc.id, ...doc.data() }));
                 applications = firebaseApps;
                 saveApplications();
-                renderApplications();
+                activeCurrentPage = 1;
+                archiveCurrentPage = 1;
+                renderCurrentTab();
                 updateDeadlineSlider();
-            } catch (err) {
-                console.warn("Firebase load failed:", err);
-            }
+            } catch (err) { console.warn("Firebase load failed:", err); }
         }
-
 
         // ===== DEADLINE SLIDER BANNER =====
         function getUrgentApps() {
@@ -1832,41 +2401,213 @@ function renderListRow(app) {
             });
         }
 
-        function closeDeadlineSlider() {
-            document.getElementById('deadline-slider-wrap').classList.remove('show');
-        }
+        function closeDeadlineSlider() { document.getElementById('deadline-slider-wrap').classList.remove('show'); }
 
         function updateDeadlineSlider() {
             const criticalJobs = getUrgentApps();
             const wrap = document.getElementById('deadline-slider-wrap');
             const textEl = document.getElementById('deadline-slider-text');
+            if (criticalJobs.length === 0) { wrap.classList.remove('show'); return; }
+            const jobNames = criticalJobs.map(j => `<span class="job-list">"${j.company} — ${j.role}"</span>`).join(', ');
+            textEl.innerHTML =
+                `<strong>⚠️ You have ${criticalJobs.length} job${criticalJobs.length > 1 ? 's' : ''} closing within 3 days!</strong> Please apply soon. The post${criticalJobs.length > 1 ? 's' : ''} ${criticalJobs.length > 1 ? 'are' : 'is'}: ${jobNames}`;
+            requestAnimationFrame(() => { setTimeout(() => wrap.classList.add('show'), 120); });
+        }
 
-            if (criticalJobs.length === 0) {
-                wrap.classList.remove('show');
-                return;
+        // ===== PROFILE SAVE (for inline name editing) =====
+        function saveProfile() {
+            const name = document.getElementById('user-name').value.trim();
+            const uid = currentUser ? currentUser.uid : 'local';
+            const existing = JSON.parse(localStorage.getItem('profile_' + uid) || '{}');
+            existing.name = name;
+            localStorage.setItem('profile_' + uid, JSON.stringify(existing));
+            if (currentUser) {
+                db.collection('users').doc(currentUser.uid).set({ profile: existing }, { merge: true }).catch(() => {});
             }
+        }
+    </script>
 
-            const jobNames = criticalJobs
-                .map(j => `<span class="job-list">"${j.company} — ${j.role}"</span>`)
-                .join(', ');
+    <!-- ===== NOTEPAD MODAL ===== -->
+    <div id="notepad-overlay" style="display:none;position:fixed;inset:0;z-index:9000;background:rgba(15,23,42,0.5);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:16px;">
+        <div id="notepad-card" style="width:100%;max-width:620px;border-radius:20px;overflow:hidden;box-shadow:0 24px 64px rgba(0,0,0,0.22);display:flex;flex-direction:column;max-height:90vh;background:#fff8e1;">
+            <div id="notepad-topbar" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px 10px;background:inherit;">
+                <div style="flex:1;">
+                    <div id="notepad-title" style="font-weight:800;font-size:16px;color:#37474f;line-height:1.3;"></div>
+                    <div id="notepad-subtitle" style="font-size:12px;color:#78909c;margin-top:2px;"></div>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    <div style="position:relative;" id="np-bg-wrapper">
+                        <button onclick="toggleNpBgPicker()" title="Background colour" style="width:30px;height:30px;border-radius:50%;border:1.5px solid #cfd8dc;background:white;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;color:#546e7a;"><i class="fas fa-palette"></i></button>
+                        <div id="np-bg-picker" style="display:none;position:absolute;right:0;top:38px;background:white;border:1px solid #e2e8f0;border-radius:14px;padding:10px;box-shadow:0 8px 24px rgba(0,0,0,0.14);flex-wrap:wrap;gap:6px;width:196px;z-index:10;">
+                            <span style="font-size:10px;font-weight:700;color:#94a3b8;width:100%;display:block;margin-bottom:2px;">BACKGROUND</span>
+                            <button onclick="setNpBg('#fff8e1','yellow')" title="Yellow" style="width:28px;height:28px;border-radius:50%;background:#fff8e1;border:2px solid #f9a825;cursor:pointer;"></button>
+                            <button onclick="setNpBg('#ffffff','white')" title="White" style="width:28px;height:28px;border-radius:50%;background:#ffffff;border:2px solid #cfd8dc;cursor:pointer;"></button>
+                            <button onclick="setNpBg('#e8f5e9','green')" title="Green" style="width:28px;height:28px;border-radius:50%;background:#e8f5e9;border:2px solid #66bb6a;cursor:pointer;"></button>
+                            <button onclick="setNpBg('#e3f2fd','blue')" title="Blue" style="width:28px;height:28px;border-radius:50%;background:#e3f2fd;border:2px solid #42a5f5;cursor:pointer;"></button>
+                            <button onclick="setNpBg('#fce4ec','pink')" title="Pink" style="width:28px;height:28px;border-radius:50%;background:#fce4ec;border:2px solid #ef9a9a;cursor:pointer;"></button>
+                            <button onclick="setNpBg('#f3e5f5','purple')" title="Purple" style="width:28px;height:28px;border-radius:50%;background:#f3e5f5;border:2px solid #ce93d8;cursor:pointer;"></button>
+                            <button onclick="setNpBg('#fff3e0','orange')" title="Orange" style="width:28px;height:28px;border-radius:50%;background:#fff3e0;border:2px solid #ffa726;cursor:pointer;"></button>
+                            <button onclick="setNpBg('#efebe9','brown')" title="Brown" style="width:28px;height:28px;border-radius:50%;background:#efebe9;border:2px solid #a1887f;cursor:pointer;"></button>
+                            <button onclick="setNpBg('#263238','dark')" title="Dark" style="width:28px;height:28px;border-radius:50%;background:#263238;border:2px solid #546e7a;cursor:pointer;"></button>
+                        </div>
+                    </div>
+                    <button onclick="closeNotepad()" style="width:30px;height:30px;border-radius:50%;border:none;background:rgba(0,0,0,0.08);cursor:pointer;font-size:16px;color:#546e7a;display:flex;align-items:center;justify-content:center;">✕</button>
+                </div>
+            </div>
+            <div id="notepad-toolbar" style="display:flex;align-items:center;gap:2px;padding:6px 14px;border-top:1px solid rgba(0,0,0,0.07);border-bottom:1px solid rgba(0,0,0,0.07);flex-wrap:wrap;background:inherit;">
+                <button onclick="npExec('bold')" title="Bold" class="np-btn"><b>B</b></button>
+                <button onclick="npExec('italic')" title="Italic" class="np-btn"><i>I</i></button>
+                <button onclick="npExec('underline')" title="Underline" class="np-btn" style="text-decoration:underline;">U</button>
+                <button onclick="npExec('strikeThrough')" title="Strikethrough" class="np-btn" style="text-decoration:line-through;">S</button>
+                <div class="np-sep"></div>
+                <button onclick="npExec('insertUnorderedList')" title="Bullet list" class="np-btn"><i class="fas fa-list-ul" style="font-size:11px;"></i></button>
+                <button onclick="npExec('insertOrderedList')" title="Numbered list" class="np-btn"><i class="fas fa-list-ol" style="font-size:11px;"></i></button>
+                <div class="np-sep"></div>
+                <button onclick="npExec('justifyLeft')" title="Left" class="np-btn"><i class="fas fa-align-left" style="font-size:11px;"></i></button>
+                <button onclick="npExec('justifyCenter')" title="Center" class="np-btn"><i class="fas fa-align-center" style="font-size:11px;"></i></button>
+                <button onclick="npExec('justifyRight')" title="Right" class="np-btn"><i class="fas fa-align-right" style="font-size:11px;"></i></button>
+                <div class="np-sep"></div>
+                <select onchange="npExec('fontSize',this.value);this.value=''" class="np-btn" style="width:60px;padding:0 4px;font-size:11px;" title="Font size">
+                    <option value="">Size</option><option value="1">Small</option><option value="3">Normal</option><option value="5">Large</option><option value="7">Huge</option>
+                </select>
+                <div class="np-sep"></div>
+                <label title="Text colour" class="np-btn" style="position:relative;cursor:pointer;overflow:hidden;"><i class="fas fa-font" style="font-size:11px;"></i><input type="color" value="#212121" onchange="npExec('foreColor',this.value)" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;top:0;left:0;"></label>
+                <label title="Highlight" class="np-btn" style="position:relative;cursor:pointer;overflow:hidden;background:#fff176;"><i class="fas fa-highlighter" style="font-size:11px;"></i><input type="color" value="#ffff00" onchange="npExec('hiliteColor',this.value)" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;top:0;left:0;"></label>
+                <div class="np-sep"></div>
+                <button onclick="npExec('removeFormat')" title="Clear formatting" class="np-btn"><i class="fas fa-remove-format" style="font-size:11px;"></i></button>
+            </div>
+            <div id="notepad-body" contenteditable="true" style="flex:1;overflow-y:auto;padding:18px 22px;min-height:260px;max-height:420px;outline:none;font-size:14px;line-height:1.7;color:#37474f;background:inherit;" data-placeholder="Start typing your note…"></div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 18px;border-top:1px solid rgba(0,0,0,0.07);background:inherit;">
+                <span id="notepad-saved" style="font-size:11px;color:#90a4ae;"></span>
+                <div style="display:flex;gap:8px;">
+                    <button onclick="clearNote()" style="padding:7px 16px;border-radius:8px;border:1px solid #cfd8dc;background:white;font-size:13px;font-weight:600;color:#ef5350;cursor:pointer;">Clear</button>
+                    <button onclick="saveNote()" style="padding:7px 20px;border-radius:8px;border:none;background:#fdd835;font-size:13px;font-weight:700;color:#37474f;cursor:pointer;box-shadow:0 2px 6px rgba(253,216,53,0.4);">Save Note</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            textEl.innerHTML = `
-                <strong>⚠️ You have ${criticalJobs.length} job${criticalJobs.length > 1 ? 's' : ''} closing within 3 days!</strong>
-                Please apply soon. The post${criticalJobs.length > 1 ? 's' : ''} ${criticalJobs.length > 1 ? 'are' : 'is'}: ${jobNames}
-            `;
+    <style>
+        .np-btn {
+            padding: 5px 9px;
+            border-radius: 7px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 700;
+            color: #546e7a;
+            transition: background 0.12s;
+        }
+        .np-btn:hover {
+            background: rgba(0, 0, 0, 0.08);
+        }
+        .np-sep {
+            width: 1px;
+            height: 20px;
+            background: rgba(0, 0, 0, 0.1);
+            margin: 0 3px;
+        }
+        #notepad-body:empty:before {
+            content: attr(data-placeholder);
+            color: #b0bec5;
+            pointer-events: none;
+        }
+        #notepad-body ul {
+            list-style: disc;
+            padding-left: 20px;
+        }
+        #notepad-body ol {
+            list-style: decimal;
+            padding-left: 20px;
+        }
+    </style>
 
-            // Slide in after a short delay so it animates on load
-            requestAnimationFrame(() => {
-                setTimeout(() => wrap.classList.add('show'), 120);
+    <script>
+        let npCurrentId = null;
+
+        function openNotepad(id, role, company) {
+            npCurrentId = id;
+            const overlay = document.getElementById('notepad-overlay');
+            overlay.style.display = 'flex';
+            document.getElementById('notepad-title').textContent = role;
+            document.getElementById('notepad-subtitle').textContent = company;
+            const saved = JSON.parse(localStorage.getItem('note_' + id) || '{}');
+            const body = document.getElementById('notepad-body');
+            body.innerHTML = saved.html || '';
+            setNpBg(saved.bg || '#fff8e1', '', false);
+            document.getElementById('notepad-saved').textContent = saved.ts ? 'Last saved: ' + saved.ts : '';
+            setTimeout(() => { overlay.onclick = (e) => { if (e.target === overlay) closeNotepad(); }; }, 10);
+        }
+
+        function closeNotepad() {
+            document.getElementById('notepad-overlay').style.display = 'none';
+            document.getElementById('np-bg-picker').style.display = 'none';
+        }
+
+        function saveNote() {
+            if (!npCurrentId) return;
+            const body = document.getElementById('notepad-body');
+            const bg = document.getElementById('notepad-card').style.background;
+            const ts = new Date().toLocaleString();
+            localStorage.setItem('note_' + npCurrentId, JSON.stringify({ html: body.innerHTML, bg, ts }));
+            document.getElementById('notepad-saved').textContent = 'Saved at ' + ts;
+            const btn = event.target;
+            btn.textContent = 'Saved ✓';
+            setTimeout(() => { btn.textContent = 'Save Note'; }, 1500);
+            updateNoteIndicators();
+        }
+
+        function clearNote() {
+            if (!confirm('Clear this note?')) return;
+            document.getElementById('notepad-body').innerHTML = '';
+            document.getElementById('notepad-saved').textContent = '';
+            if (npCurrentId) localStorage.removeItem('note_' + npCurrentId);
+            updateNoteIndicators();
+        }
+
+        function npExec(cmd, val) {
+            document.getElementById('notepad-body').focus();
+            document.execCommand(cmd, false, val || null);
+        }
+
+        function toggleNpBgPicker() {
+            const p = document.getElementById('np-bg-picker');
+            p.style.display = p.style.display === 'flex' ? 'none' : 'flex';
+        }
+
+        function setNpBg(color, name, closeP = true) {
+            const card = document.getElementById('notepad-card');
+            card.style.background = color;
+            const body = document.getElementById('notepad-body');
+            const dark = color === '#263238';
+            body.style.color = dark ? '#eceff1' : '#37474f';
+            document.getElementById('notepad-title').style.color = dark ? '#eceff1' : '#37474f';
+            document.getElementById('notepad-subtitle').style.color = dark ? '#90a4ae' : '#78909c';
+            if (closeP) document.getElementById('np-bg-picker').style.display = 'none';
+        }
+
+        function updateNoteIndicators() {
+            document.querySelectorAll('[data-note-dot]').forEach(el => {
+                const id = el.getAttribute('data-note-dot');
+                el.style.display = localStorage.getItem('note_' + id) ? 'block' : 'none';
             });
         }
 
-
+function getNoteText(appId) {
+    const raw = localStorage.getItem('note_' + appId);
+    if (!raw) return '';
+    try {
+        const data = JSON.parse(raw);
+        // data.html contains the saved HTML; strip tags to get plain text
+        const div = document.createElement('div');
+        div.innerHTML = data.html || '';
+        return div.textContent || div.innerText || '';
+    } catch (e) {
+        return '';
+    }
+}
 
     </script>
-
-
-
-
 </body>
 </html>
