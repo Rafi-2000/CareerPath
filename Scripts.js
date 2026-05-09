@@ -744,6 +744,7 @@ async function handleFile(input, type) {
         // ===== COMPANY LOGO HELPER =====
         function getCompanyLogoUrl(companyName) {
             const name = companyName.trim().toLowerCase();
+            // Known domain overrides (especially for local/BD companies)
             const overrides = {
                 'google': 'google.com',
                 'openai': 'openai.com',
@@ -782,9 +783,28 @@ async function handleFile(input, type) {
                 'dutch bangla bank': 'dutchbanglabank.com',
                 'dbbl': 'dutchbanglabank.com',
                 'brac bank': 'bracbank.com',
+                'islami bank': 'islamibankbd.com',
+                'sonali bank': 'sonalibank.com.bd',
+                'janata bank': 'janatabank-bd.com',
+                'agrani bank': 'agranibank.org',
+                'rupali bank': 'rupalibank.org',
+                'city bank': 'thecitybank.com',
+                'eastern bank': 'ebl.com.bd',
+                'prime bank': 'primebank.com.bd',
+                'southeast bank': 'southeastbank.com.bd',
+                'trust bank': 'trustbank.com.bd',
+                'uttara bank': 'uttarabank-bd.com',
+                'ific bank': 'ificbankbd.com',
+                'bank asia': 'bankasia.com.bd',
+                'mutual trust bank': 'mutualtrustbank.com',
+                'national bank': 'nblbd.com',
+                'exim bank': 'eximbankbd.com',
+                'social islami bank': 'siblbd.com',
+                'shahjalal islami bank': 'sjiblbd.com',
                 'grameenphone': 'grameenphone.com',
                 'robi': 'robi.com.bd',
                 'banglalink': 'banglalink.net',
+                'teletalk': 'teletalk.com.bd',
                 'bkash': 'bkash.com',
                 'nagad': 'nagad.com.bd',
                 'walton': 'waltonbd.com',
@@ -792,7 +812,7 @@ async function handleFile(input, type) {
                 'square': 'squaregroup.com.bd',
                 'beximco': 'beximco.com',
                 'bashundhara': 'bashundharagroup.com',
-                'Eastern Bank': 'ebl.com.bd'
+                'akij': 'akijgroup.com.bd',
             };
             const domain = overrides[name] || (name.replace(/[^a-z0-9]/g, '') + '.com');
             return 'https://www.google.com/s2/favicons?domain=' + domain + '&sz=64';
