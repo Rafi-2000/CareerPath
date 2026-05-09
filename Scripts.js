@@ -813,6 +813,11 @@ async function handleFile(input, type) {
                 'beximco': 'beximco.com',
                 'bashundhara': 'bashundharagroup.com',
                 'akij': 'akijgroup.com.bd',
+                'The Security Printing Corporation (Bangladesh) Ltd': 'spcbl.org.bd',
+                'Bangladesh Bank': 'bb.org.bd',
+                'BARI': 'bari.gov.bd',
+                'BCS': 'bpsc.gov.bd',
+                'DPE': 'dpe.gov.bd',
             };
             const domain = overrides[name] || (name.replace(/[^a-z0-9]/g, '') + '.com');
             return 'https://www.google.com/s2/favicons?domain=' + domain + '&sz=64';
