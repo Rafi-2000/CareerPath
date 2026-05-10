@@ -240,7 +240,7 @@
             wishlist: { label: 'Wishlist', color: 'bg-gray-100 text-gray-700 border-gray-200' },
             applied: { label: 'Applied', color: 'bg-blue-100 text-blue-700 border-blue-200' },
             preliminary: { label: 'Preliminary (Pass)', color: 'bg-orange-100 text-orange-700 border-orange-200' },
-            written: { label: 'Written', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+            written: { label: 'Written (Pass)', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
             interview: { label: 'Interview', color: 'bg-purple-100 text-purple-700 border-purple-200' },
             offer: { label: 'Offer', color: 'bg-green-100 text-green-700 border-green-200' },
             rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700 border-red-200' }
@@ -395,13 +395,13 @@ async function handleFile(input, type) {
                 preliminary: all.filter(a => a.status === 'preliminary').length,
                 written: all.filter(a => a.status === 'written').length,
                 interviews: all.filter(a => a.status === 'interview').length,
-                offers: all.filter(a => a.status === 'offer').length
+                offers: all.filter(a => a.status === 'offer').length,
             };
             document.getElementById('stats-container').innerHTML = `
                 ${renderStatCard('Total Applications', counts.total, 'fa-th-large', 'blue')}
                 ${renderStatCard('Applied', counts.applied, 'fa-paper-plane', 'amber')}
                 ${renderStatCard('Preliminary (Pass)', counts.preliminary, 'fa-clipboard-check', 'orange')}
-                ${renderStatCard('Written', counts.written, 'fa-pen-nib', 'indigo')}
+                ${renderStatCard('Written (Pass)', counts.written, 'fa-pen-nib', 'indigo')}
                 ${renderStatCard('Interviews', counts.interviews, 'fa-calendar-alt', 'purple')}
                 ${renderStatCard('Offers', counts.offers, 'fa-chart-line', 'green')}
             `;
