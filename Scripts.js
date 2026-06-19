@@ -393,6 +393,7 @@ async function handleFile(input, type) {
                 total: all.length,
                 applied: all.filter(a => a.status === 'applied').length,
                 preliminary: all.filter(a => a.status === 'preliminary').length,
+                rejected: all.filter(a => a.status === 'rejected').length,
                 written: all.filter(a => a.status === 'written').length,
                 interviews: all.filter(a => a.status === 'interview').length,
                 offers: all.filter(a => a.status === 'offer').length,
@@ -401,6 +402,7 @@ async function handleFile(input, type) {
                 ${renderStatCard('Total Applications', counts.total, 'fa-th-large', 'blue')}
                 ${renderStatCard('Applied', counts.applied, 'fa-paper-plane', 'amber')}
                 ${renderStatCard('Preliminary (Pass)', counts.preliminary, 'fa-clipboard-check', 'orange')}
+                ${renderStatCard('Rejected', counts.rejected, 'fa-circle-xmark', 'red')}
                 ${renderStatCard('Written (Pass)', counts.written, 'fa-pen-nib', 'indigo')}
                 ${renderStatCard('Interviews', counts.interviews, 'fa-calendar-alt', 'purple')}
                 ${renderStatCard('Offers', counts.offers, 'fa-chart-line', 'green')}
