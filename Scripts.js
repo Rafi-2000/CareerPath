@@ -416,7 +416,8 @@ async function handleFile(input, type) {
                 orange: 'text-orange-600 bg-orange-50 border-orange-100',
                 indigo: 'text-indigo-600 bg-indigo-50 border-indigo-100',
                 purple: 'text-purple-600 bg-purple-50 border-purple-100',
-                green: 'text-green-600 bg-green-50 border-green-100'
+                green: 'text-green-600 bg-green-50 border-green-100',
+                red: 'text-red-600 bd-red-50 border-red-100'
             };
             return `
                 <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col hover:border-slate-300 transition-colors">
