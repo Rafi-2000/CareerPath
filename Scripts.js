@@ -240,7 +240,7 @@
             wishlist: { label: 'Wishlist', color: 'bg-gray-100 text-gray-700 border-gray-200' },
             applied: { label: 'Applied', color: 'bg-blue-100 text-blue-700 border-blue-200' },
             preliminary: { label: 'Preliminary (Pass)', color: 'bg-orange-100 text-orange-700 border-orange-200' },
-            written: { label: 'Written (Pass)', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+            written: { label: 'Written (Fail)', color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
             interview: { label: 'Interview', color: 'bg-purple-100 text-purple-700 border-purple-200' },
             offer: { label: 'Offer', color: 'bg-green-100 text-green-700 border-green-200' },
             rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700 border-red-200' }
@@ -391,6 +391,7 @@ async function handleFile(input, type) {
             const all = applications;
             const counts = {
                 total: all.length,
+                wishlist: all.filter(a => a.status === 'wishlist').length,
                 applied: all.filter(a => a.status === 'applied').length,
                 preliminary: all.filter(a => a.status === 'preliminary').length,
                 rejected: all.filter(a => a.status === 'rejected').length,
@@ -400,10 +401,11 @@ async function handleFile(input, type) {
             };
             document.getElementById('stats-container').innerHTML = `
                 ${renderStatCard('Total Applications', counts.total, 'fa-th-large', 'blue')}
+                ${renderStatCard('Wishlist', counts.wishlist, 'fa-heart', 'gray')}
                 ${renderStatCard('Applied', counts.applied, 'fa-paper-plane', 'amber')}
                 ${renderStatCard('Preliminary (Pass)', counts.preliminary, 'fa-clipboard-check', 'orange')}
                 ${renderStatCard('Rejected', counts.rejected, 'fa-circle-xmark', 'red')}
-                ${renderStatCard('Written (Pass)', counts.written, 'fa-pen-nib', 'indigo')}
+                ${renderStatCard('Written (Fail)', counts.written, 'fa-pen-nib', 'indigo')}
                 ${renderStatCard('Interviews', counts.interviews, 'fa-calendar-alt', 'purple')}
                 ${renderStatCard('Offers', counts.offers, 'fa-chart-line', 'green')}
             `;
@@ -417,7 +419,8 @@ async function handleFile(input, type) {
                 indigo: 'text-indigo-600 bg-indigo-50 border-indigo-100',
                 purple: 'text-purple-600 bg-purple-50 border-purple-100',
                 green: 'text-green-600 bg-green-50 border-green-100',
-                red: 'text-red-600 bd-red-50 border-red-100'
+                red: 'text-red-600 bg-red-50 border-red-100',
+                gray: 'text-gray-600 bg-gray-50 border-gray-100'
             };
             return `
                 <div class="bg-white p-3 sm:p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col hover:border-slate-300 transition-colors">
